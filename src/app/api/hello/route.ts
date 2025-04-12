@@ -117,10 +117,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     // Access a property (for instance, 'account') from the body
     const accountField = body?.account;
-    const depositor = new PublicKey(accountField);
+    const account = new PublicKey(accountField);
     const {searchParams}  = new URL(request.url);
     console.log("hello---", searchParams);
-    console.log("Parsed account from body:", depositor.toString());
+    console.log("Parsed account from body:", account);
 
     const mintAPubkey = searchParams.get("mintA");
     const mintBPubkey = searchParams.get("mintB");
@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
     const referenceParam = searchParams.get("reference");
 // http://localhost:3000/api/hello?mintA=Gvi3gqecizXrhEKpaqKPMz4VduHyu6KULTURKNq577AE&mintB=7UqEjPkUV3aL8aMJToVMGHXHXLAKotAgvTGQPJf72J3m&depositAmountA=1000000&depositAmountB=10000000&minLiquidity=100&fees=100&reference=7aqEjPkUV3aL8aMJToVMGHXHXLAKotAgvTGQPJf72J3m
     if (
-      !depositor ||
+      !account ||
       !mintAPubkey ||
       !mintBPubkey ||
       !depositAmountA ||
@@ -180,23 +180,21 @@ export async function POST(request: NextRequest) {
     );
 
     // User associated token accounts
-    const depositorAccountA = await getAssociatedTokenAddress(mintA, depositor);
-    const depositorAccountB = await getAssociatedTokenAddress(mintB, depositor);
-    const depositorAccountLiquidity = await getAssociatedTokenAddress(mintLiquidity, depositor);
+    // const depositorAccountA = await getAssociatedTokenAddress(mintA, depositor);
+    // const depositorAccountB = await getAssociatedTokenAddress(mintB, depositor);
+    // const depositorAccountLiquidity = await getAssociatedTokenAddress(mintLiquidity, depositor);
 
     const tokenProgram = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
     const associatedTokenProgram = new PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
     const systemProgram = new PublicKey("11111111111111111111111111111111");
 
     // const instructionData = getInstructionData(
-    //   depositAmountABN,  // 8
+    //   depositAmountABN,
     //   depositAmountBBN,
     //   minLiquidityBN,
     //   feesBN,
     //   false // useEntireAmount (hardcoded to false)
     // );
-    // console.log(instructionData);
-
 
     // const depositIX = new TransactionInstruction({
     //   programId: PROGRAM_ID,
@@ -224,7 +222,7 @@ export async function POST(request: NextRequest) {
       programId: new PublicKey("AAwQy1UeenPqH6poqtiR6sKePDgeF2YcnHmy2jSNYRL6"), // Your program's ID
       keys: [
         { pubkey: new PublicKey("4TeGWrrqMHW43r2QVYctp993pD6tAb4ZW4dxHJDNqmBR"), isSigner: false, isWritable: true },
-        { pubkey: depositor, isSigner: true, isWritable: true }, 
+        { pubkey: account, isSigner: true, isWritable: true }, 
         { pubkey: reference, isSigner: false, isWritable: false },
       ],
       data: data, 
@@ -234,7 +232,7 @@ export async function POST(request: NextRequest) {
     const transaction = new Transaction().add(incrementIx);
     const { blockhash } = await connection.getLatestBlockhash();
     transaction.recentBlockhash = blockhash;
-    transaction.feePayer = depositor;
+    transaction.feePayer = account;
 
     const serializedTransaction = transaction.serialize({
       verifySignatures: false,
