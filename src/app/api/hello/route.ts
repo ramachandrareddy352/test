@@ -121,76 +121,79 @@ export async function POST(request: NextRequest) {
     const { account} = body?.account;
     console.log("Parsed account from body:", account);
 
-    const mintAPubkey = searchParams.get("mintA");
-    const mintBPubkey = searchParams.get("mintB");
-    const depositAmountA = searchParams.get("depositAmountA");
-    const depositAmountB = searchParams.get("depositAmountB");
-    const minLiquidity = searchParams.get("minLiquidity");
-    const fees = searchParams.get("fees");
+    // const mintAPubkey = searchParams.get("mintA");
+    // const mintBPubkey = searchParams.get("mintB");
+    // const depositAmountA = searchParams.get("depositAmountA");
+    // const depositAmountB = searchParams.get("depositAmountB");
+    // const minLiquidity = searchParams.get("minLiquidity");
+    // const fees = searchParams.get("fees");
     const referenceParam = searchParams.get("reference");
 // http://localhost:3000/api/hello?mintA=Gvi3gqecizXrhEKpaqKPMz4VduHyu6KULTURKNq577AE&mintB=7UqEjPkUV3aL8aMJToVMGHXHXLAKotAgvTGQPJf72J3m&depositAmountA=1000000&depositAmountB=10000000&minLiquidity=100&fees=100&reference=7aqEjPkUV3aL8aMJToVMGHXHXLAKotAgvTGQPJf72J3m
-    if (
-      !account ||
-      !mintAPubkey ||
-      !mintBPubkey ||
-      !depositAmountA ||
-      !depositAmountB ||
-      !minLiquidity ||
-      !fees ||
-      !referenceParam
-    ) {
-      throw new Error("Missing required fields in request parameters.");
+    // if (
+    //   !account ||
+    //   !mintAPubkey ||
+    //   !mintBPubkey ||
+    //   !depositAmountA ||
+    //   !depositAmountB ||
+    //   !minLiquidity ||
+    //   !fees ||
+    //   !referenceParam
+    // ) {
+    //   throw new Error("Missing required fields in request parameters.");
+    // }
+    if (!referenceParam){
+      throw new Error("missing reference");
     }
 
     const reference = new PublicKey(referenceParam);
-    const depositor = new PublicKey(account);
-    const mintA = new PublicKey(mintAPubkey);
-    const mintB = new PublicKey(mintBPubkey);
+    // const depositor = new PublicKey(account);
+    // const mintA = new PublicKey(mintAPubkey);
+    // const mintB = new PublicKey(mintBPubkey);
 
-    const depositAmountABN = new BN(depositAmountA);
-    const depositAmountBBN = new BN(depositAmountB);
-    const minLiquidityBN = new BN(minLiquidity);
-    const feesBN = new BN(fees);
+    // const depositAmountABN = new BN(depositAmountA);
+    // const depositAmountBBN = new BN(depositAmountB);
+    // const minLiquidityBN = new BN(minLiquidity);
+    // const feesBN = new BN(fees);
 
     // Derive PDAs
-    const [amm] = PublicKey.findProgramAddressSync(
-      [Buffer.from("amm")],
-      PROGRAM_ID
-    );
-    console.log(amm.toString());
-    const [pool] = PublicKey.findProgramAddressSync(
-      [Buffer.from("pool"), amm.toBuffer(), mintA.toBuffer(), mintB.toBuffer()],
-      PROGRAM_ID
-    );
-    const [mintLiquidity] = PublicKey.findProgramAddressSync(
-      [Buffer.from("liquidity"), pool.toBuffer()],
-      PROGRAM_ID
-    );
-    const [poolAccountA] = PublicKey.findProgramAddressSync(
-      [Buffer.from("pool-account-a"), pool.toBuffer(), mintA.toBuffer()],
-      PROGRAM_ID
-    );
-    const [poolAccountB] = PublicKey.findProgramAddressSync(
-      [Buffer.from("pool-account-b"), pool.toBuffer(), mintB.toBuffer()],
-      PROGRAM_ID
-    );
+    // const [amm] = PublicKey.findProgramAddressSync(
+    //   [Buffer.from("amm")],
+    //   PROGRAM_ID
+    // );
+    // console.log(amm.toString());
+    // const [pool] = PublicKey.findProgramAddressSync(
+    //   [Buffer.from("pool"), amm.toBuffer(), mintA.toBuffer(), mintB.toBuffer()],
+    //   PROGRAM_ID
+    // );
+    // const [mintLiquidity] = PublicKey.findProgramAddressSync(
+    //   [Buffer.from("liquidity"), pool.toBuffer()],
+    //   PROGRAM_ID
+    // );
+    // const [poolAccountA] = PublicKey.findProgramAddressSync(
+    //   [Buffer.from("pool-account-a"), pool.toBuffer(), mintA.toBuffer()],
+    //   PROGRAM_ID
+    // );
+    // const [poolAccountB] = PublicKey.findProgramAddressSync(
+    //   [Buffer.from("pool-account-b"), pool.toBuffer(), mintB.toBuffer()],
+    //   PROGRAM_ID
+    // );
 
     // User associated token accounts
-    const depositorAccountA = await getAssociatedTokenAddress(mintA, depositor);
-    const depositorAccountB = await getAssociatedTokenAddress(mintB, depositor);
-    const depositorAccountLiquidity = await getAssociatedTokenAddress(mintLiquidity, depositor);
+    // const depositorAccountA = await getAssociatedTokenAddress(mintA, depositor);
+    // const depositorAccountB = await getAssociatedTokenAddress(mintB, depositor);
+    // const depositorAccountLiquidity = await getAssociatedTokenAddress(mintLiquidity, depositor);
 
-    const tokenProgram = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
-    const associatedTokenProgram = new PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
-    const systemProgram = new PublicKey("11111111111111111111111111111111");
+    // const tokenProgram = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
+    // const associatedTokenProgram = new PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
+    // const systemProgram = new PublicKey("11111111111111111111111111111111");
 
-    const instructionData = getInstructionData(
-      depositAmountABN,
-      depositAmountBBN,
-      minLiquidityBN,
-      feesBN,
-      false // useEntireAmount (hardcoded to false)
-    );
+    // const instructionData = getInstructionData(
+    //   depositAmountABN,
+    //   depositAmountBBN,
+    //   minLiquidityBN,
+    //   feesBN,
+    //   false // useEntireAmount (hardcoded to false)
+    // );
 
     // const depositIX = new TransactionInstruction({
     //   programId: PROGRAM_ID,
@@ -218,7 +221,7 @@ export async function POST(request: NextRequest) {
       programId: new PublicKey("AAwQy1UeenPqH6poqtiR6sKePDgeF2YcnHmy2jSNYRL6"), // Your program's ID
       keys: [
         { pubkey: new PublicKey("4TeGWrrqMHW43r2QVYctp993pD6tAb4ZW4dxHJDNqmBR"), isSigner: false, isWritable: true },
-        { pubkey: depositor, isSigner: true, isWritable: true }, 
+        { pubkey: account, isSigner: true, isWritable: true }, 
         { pubkey: reference, isSigner: false, isWritable: false },
       ],
       data: data, 
