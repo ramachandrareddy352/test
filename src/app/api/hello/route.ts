@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
     console.log("hello---", searchParams);
     const body = await request.json();
     // Access a property (for instance, 'account') from the body
-    const { account } = body;
+    const account = body?.account;
     console.log("Parsed account from body:", account);
 
     const mintAPubkey = searchParams.get("mintA");
