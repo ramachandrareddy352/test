@@ -188,14 +188,14 @@ export async function POST(request: NextRequest) {
     const associatedTokenProgram = new PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
     const systemProgram = new PublicKey("11111111111111111111111111111111");
 
-    const instructionData = getInstructionData(
-      depositAmountABN,  // 8
-      depositAmountBBN,
-      minLiquidityBN,
-      feesBN,
-      false // useEntireAmount (hardcoded to false)
-    );
-    console.log(instructionData);
+    // const instructionData = getInstructionData(
+    //   depositAmountABN,  // 8
+    //   depositAmountBBN,
+    //   minLiquidityBN,
+    //   feesBN,
+    //   false // useEntireAmount (hardcoded to false)
+    // );
+    // console.log(instructionData);
 
 
     // const depositIX = new TransactionInstruction({
