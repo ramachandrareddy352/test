@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
 //     console.log("hello---", searchParams);
 //     const body = await request.json();
 //     // Access a property (for instance, 'account') from the body
-//     const { account = body?.account;
+//     const { account} = body?.account;
 //     console.log("Parsed account from body:", account);
 
 //     const mintAPubkey = searchParams.get("mintA");
@@ -208,7 +208,7 @@ export async function POST(request: NextRequest) {
 //         { pubkey: tokenProgram, isSigner: false, isWritable: false },
 //         { pubkey: associatedTokenProgram, isSigner: false, isWritable: false },
 //         { pubkey: systemProgram, isSigner: false, isWritable: false },
-//         { pubkey: reference, isSigner: false, isWritable: true }
+//         { pubkey: reference, isSigner: false, isWritable: false }
 //       ],
 //       data: instructionData,
 //     });
