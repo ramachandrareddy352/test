@@ -41,7 +41,7 @@ export async function GET(
 }
 
 
-// export async function HANDLE(request: NextRequest) {
+// export async function POST(request: NextRequest) {
 //   try {
 //     // Parse the request body
 //     const body = await request.json();
@@ -203,7 +203,7 @@ export async function POST(request: NextRequest) {
         { pubkey: tokenProgram, isSigner: false, isWritable: false },
         { pubkey: associatedTokenProgram, isSigner: false, isWritable: false },
         { pubkey: systemProgram, isSigner: false, isWritable: false },
-        { pubkey: reference, isSigner: false, isWritable: false }
+        // { pubkey: reference, isSigner: false, isWritable: true }
       ],
       data: instructionData,
     });
