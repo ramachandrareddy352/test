@@ -114,11 +114,12 @@ export async function POST(request: NextRequest) {
   try {
     console.log("hello");
 
-    const {searchParams}  = new URL(request.url);
-    console.log("hello---", searchParams);
     const body = await request.json();
     // Access a property (for instance, 'account') from the body
-    const { account} = body?.account;
+    const accountField = body?.account;
+    const account = new PublicKey(accountField);
+    const {searchParams}  = new URL(request.url);
+    console.log("hello---", searchParams);
     console.log("Parsed account from body:", account);
 
     // const mintAPubkey = searchParams.get("mintA");
