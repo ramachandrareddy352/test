@@ -112,10 +112,15 @@ export async function GET(
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { account } = body;
+    console.log("hello");
 
-    const { searchParams } = new URL(request.url);
+    const searchParams  = request.nextUrl.searchParams;
+    console.log("hello---", searchParams);
+    const body = await request.json();
+    // Access a property (for instance, 'account') from the body
+    const { account } = body;
+    console.log("Parsed account from body:", account);
+
     const mintAPubkey = searchParams.get("mintA");
     const mintBPubkey = searchParams.get("mintB");
     const depositAmountA = searchParams.get("depositAmountA");
@@ -123,7 +128,7 @@ export async function POST(request: NextRequest) {
     const minLiquidity = searchParams.get("minLiquidity");
     const fees = searchParams.get("fees");
     const referenceParam = searchParams.get("reference");
-
+// http://localhost:3000/api/hello?mintA=Gvi3gqecizXrhEKpaqKPMz4VduHyu6KULTURKNq577AE&mintB=7UqEjPkUV3aL8aMJToVMGHXHXLAKotAgvTGQPJf72J3m&depositAmountA=1000000&depositAmountB=10000000&minLiquidity=100&fees=100&reference=7aqEjPkUV3aL8aMJToVMGHXHXLAKotAgvTGQPJf72J3m
     if (
       !account ||
       !mintAPubkey ||
@@ -203,7 +208,7 @@ export async function POST(request: NextRequest) {
         { pubkey: tokenProgram, isSigner: false, isWritable: false },
         { pubkey: associatedTokenProgram, isSigner: false, isWritable: false },
         { pubkey: systemProgram, isSigner: false, isWritable: false },
-        // { pubkey: reference, isSigner: false, isWritable: true }
+        { pubkey: reference, isSigner: false, isWritable: true }
       ],
       data: instructionData,
     });
