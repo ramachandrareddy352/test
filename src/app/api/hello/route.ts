@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
   try {
     console.log("hello");
 
-    const searchParams  = request.nextUrl.searchParams;
+    const {searchParams}  = new URL(request.url);
     console.log("hello---", searchParams);
     const body = await request.json();
     // Access a property (for instance, 'account') from the body
