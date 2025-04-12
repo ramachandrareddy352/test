@@ -231,7 +231,7 @@ export async function POST(request: NextRequest) {
     const transaction = new Transaction().add(incrementIx);
     const { blockhash } = await connection.getLatestBlockhash();
     transaction.recentBlockhash = blockhash;
-    transaction.feePayer = depositor;
+    transaction.feePayer = account;
 
     const serializedTransaction = transaction.serialize({
       verifySignatures: false,
