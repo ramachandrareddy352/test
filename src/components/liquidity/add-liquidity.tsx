@@ -16,7 +16,7 @@ import {
   FindReferenceError,
   TransactionRequestURLFields,
 } from "@solana/pay";
-import BigNumber from 'bignumber.js';
+import BigNumber from "bignumber.js";
 
 type TokenData = {
   tokenMint: string;
@@ -87,7 +87,9 @@ export function AddLiquidity() {
       params.append("minLiquidity", minLiquidity.toString());
       params.append("fees", fees.toString());
 
-      const apiUrl = `${location.protocol}//${location.host}/api/hello?${params.toString()}`;
+      const apiUrl = `${location.protocol}//${
+        location.host
+      }/api/hello?${params.toString()}`;
       // Encode the API URL into a QR code
       const urlFields: TransactionRequestURLFields = {
         link: new URL(apiUrl),

@@ -39,71 +39,71 @@ export async function GET(
 
 
 export async function POST(request: NextRequest) {
-  try {
-    // Parse the request body
-    const body = await request.json();
-    const accountField = body?.account;
+  // try {
+  //   // Parse the request body
+  //   const body = await request.json();
+  //   const accountField = body?.account;
 
-    if (!accountField) {
-      throw new Error("Missing account field in the request body.");
-    }
+  //   if (!accountField) {
+  //     throw new Error("Missing account field in the request body.");
+  //   }
 
-    const { searchParams } = new URL(request.url);
-    const referenceParam = searchParams.get('reference');
-    if (!referenceParam) {
-      throw new Error('Missing reference in the URL query parameters.');
-    }
-    const reference = new PublicKey(referenceParam);
-    // const reference = new Keypair().publicKey;
-    // console.log(reference.toBase58());
+  //   const { searchParams } = new URL(request.url);
+  //   const referenceParam = searchParams.get('reference');
+  //   if (!referenceParam) {
+  //     throw new Error('Missing reference in the URL query parameters.');
+  //   }
+  //   const reference = new PublicKey(referenceParam);
+  //   // const reference = new Keypair().publicKey;
+  //   // console.log(reference.toBase58());
 
-    // Create PublicKey for sender
-    const sender = new PublicKey(accountField);
-    // console.log(sender);
-    // Load merchant private key
-    
+  //   // Create PublicKey for sender
+  //   const sender = new PublicKey(accountField);
+  //   // console.log(sender);
+  //   // Load merchant private key
 
-    // Create the increment instruction
-    const incrementIx = new TransactionInstruction({
-      programId: PROGRAM_ID, // Your program's ID
-      keys: [
-        { pubkey: new PublicKey("4TeGWrrqMHW43r2QVYctp993pD6tAb4ZW4dxHJDNqmBR"), isSigner: false, isWritable: true },
-        { pubkey: sender, isSigner: true, isWritable: true }, 
-        { pubkey: reference, isSigner: false, isWritable: false },
-      ],
-      data: data, 
-    });
 
-    // Create the transaction
-    let transaction = new Transaction().add(incrementIx);
+  //   // Create the increment instruction
+  //   const incrementIx = new TransactionInstruction({
+  //     programId: PROGRAM_ID, // Your program's ID
+  //     keys: [
+  //       { pubkey: new PublicKey("4TeGWrrqMHW43r2QVYctp993pD6tAb4ZW4dxHJDNqmBR"), isSigner: false, isWritable: true },
+  //       { pubkey: sender, isSigner: true, isWritable: true }, 
+  //       { pubkey: reference, isSigner: false, isWritable: false },
+  //     ],
+  //     data: data, 
+  //   });
 
-    const connection = new Connection(ENDPOINT);
-    const { blockhash } = await connection.getLatestBlockhash();
-    transaction.recentBlockhash = blockhash;
-    transaction.feePayer = sender;
+  //   // Create the transaction
+  //   let transaction = new Transaction().add(incrementIx);
 
-    // transaction.partialSign(merchant)
+  //   const connection = new Connection(ENDPOINT);
+  //   const { blockhash } = await connection.getLatestBlockhash();
+  //   transaction.recentBlockhash = blockhash;
+  //   transaction.feePayer = sender;
 
-    // transaction = Transaction.from(transaction.serialize({
-    //   verifySignatures:false,
-    //   requireAllSignatures:false
-    // }))
+  //   // transaction.partialSign(merchant)
 
-    const serializedTransaction = transaction.serialize({
-      verifySignatures:false,
-      requireAllSignatures:false
-    });
-    const base64Transaction = serializedTransaction.toString("base64");
-    console.log(base64Transaction);
-    // Send the transaction
+  //   // transaction = Transaction.from(transaction.serialize({
+  //   //   verifySignatures:false,
+  //   //   requireAllSignatures:false
+  //   // }))
+
+  //   const serializedTransaction = transaction.serialize({
+  //     verifySignatures:false,
+  //     requireAllSignatures:false
+  //   });
+  //   const base64Transaction = serializedTransaction.toString("base64");
+  //   console.log(base64Transaction);
+  //   // Send the transaction
   
 
-    return NextResponse.json(
-      { transaction: base64Transaction,message: "Transaction sent successfully"},
-      { status: 200 }
-    );
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
-  }
+  //   return NextResponse.json(
+  //     { transaction: base64Transaction,message: "Transaction sent successfully"},
+  //     { status: 200 }
+  //   );
+  // } catch (error: any) {
+  //   return NextResponse.json({ error: error.message }, { status: 400 });
+  // }
 }
 
