@@ -58,15 +58,15 @@ export function AddLiquidity() {
       message.error("Connect your wallet first");
       return;
     }
-    if (
-      !tokenOne ||
-      !tokenTwo ||
-      tokenOneAmount === 0 ||
-      tokenTwoAmount === 0
-    ) {
-      message.error("Please select both tokens and enter their amounts");
-      return;
-    }
+    // if (
+    //   !tokenOne ||
+    //   !tokenTwo ||
+    //   tokenOneAmount === 0 ||
+    //   tokenTwoAmount === 0
+    // ) {
+    //   message.error("Please select both tokens and enter their amounts");
+    //   return;
+    // }
     console.log("stage-1");
     setShowQR(true);
     setPaymentStatus("Preparing transaction...");
@@ -79,13 +79,13 @@ export function AddLiquidity() {
       const params = new URLSearchParams();
       params.append("reference", reference.toString());
       // ["account", publicKey.toString()],
-      params.append("mintA", tokenOne.tokenMint);
-      params.append("mintB", tokenTwo.tokenMint);
-      // Update query parameter names to match route.ts expectations.
-      params.append("depositAmountA", tokenOneAmount.toString());
-      params.append("depositAmountB", tokenTwoAmount.toString());
-      params.append("minLiquidity", minLiquidity.toString());
-      params.append("fees", fees.toString());
+      // params.append("mintA", tokenOne.tokenMint);
+      // params.append("mintB", tokenTwo.tokenMint);
+      // // Update query parameter names to match route.ts expectations.
+      // params.append("depositAmountA", tokenOneAmount.toString());
+      // params.append("depositAmountB", tokenTwoAmount.toString());
+      // params.append("minLiquidity", minLiquidity.toString());
+      // params.append("fees", fees.toString());
 
       const apiUrl = `${location.protocol}//${
         location.host
