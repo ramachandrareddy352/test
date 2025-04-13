@@ -1,23 +1,24 @@
-import {
-  clusterApiUrl,
-  PublicKey,
-  Connection,
-  Transaction,
-  Keypair,
-  TransactionInstruction,
-} from "@solana/web3.js";
+import { clusterApiUrl, PublicKey,Connection, TransactionMessage, VersionedTransaction, SystemProgram, Transaction, Keypair, TransactionInstruction } from "@solana/web3.js";
 import { NextRequest, NextResponse } from "next/server";
 import { sha256 } from "js-sha256";
-import BN from "bn.js";
+// import { AnchorProvider, Program, BN, utils, web3 } from '@project-serum/anchor';
+import { AnchorProvider,BN, web3 } from '@coral-xyz/anchor';
 import { getAssociatedTokenAddress } from "@solana/spl-token";
-import { getDexProgram } from "../../../../anchor/src";
-import { AnchorProvider } from "@coral-xyz/anchor";
-import MockWallet from "./MockWallet";
+import {getDexProgram} from "../../../../anchor/src";
+import { useAnchorProvider } from "../../../components/solana/solana-provider";
 
-// Remove any client-only imports (like useWallet or React hooks)
-
+// type GetData = {
+//   label: string;
+//   icon: string;
+// };
+// Devnet 'fake' USDC, you can get these tokens from https://spl-token-faucet.com/
+// const USDC_ADDRESS = new PublicKey("Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr");
 const ENDPOINT = clusterApiUrl("devnet");
-
+// const NFT_NAME = "Golden Ticket";
+// const PRICE_USDC = 0.1;
+// type InputData = {
+//   account: string;
+// };
 type Data = {
   label?: string;
   icon?: string;
@@ -29,23 +30,22 @@ export type PostError = {
 };
 
 const PROGRAM_ID = new PublicKey("AAwQy1UeenPqH6poqtiR6sKePDgeF2YcnHmy2jSNYRL6");
-const DISCRIMINATOR = sha256.digest("global:increment").slice(0, 8);
-const dataBuffer = Buffer.from([...DISCRIMINATOR]);
-
+const DISCRIMINATOR = sha256.digest('global:increment').slice(0,8);
+const data = Buffer.from([...DISCRIMINATOR])
 export async function GET(
   request: NextRequest,
   response: NextResponse<Data>
 ) {
   console.log(new URL(request.url));
   const label = "Solana Pay";
-  const icon = "https://avatars.githubusercontent.com/u/92437260?v=4";
+  const icon = 'https://avatars.githubusercontent.com/u/92437260?v=4';
 
-  return NextResponse.json({ label, icon }, { status: 200 });
+  return NextResponse.json({label,icon},{status:200});
 }
+
 
 export async function POST(request: NextRequest) {
   try {
-    // Parse the JSON body
     const body = await request.json();
     const { account } = body;
 
@@ -57,7 +57,6 @@ export async function POST(request: NextRequest) {
     const minLiquidity = searchParams.get("minLiquidity");
     const fees = searchParams.get("fees");
     const referenceParam = searchParams.get("reference");
-
     if (
       !account ||
       !mintAPubkey ||
@@ -82,7 +81,10 @@ export async function POST(request: NextRequest) {
     const feesBN = new BN(fees);
 
     // Derive PDAs
-    const [amm] = PublicKey.findProgramAddressSync([Buffer.from("amm")], PROGRAM_ID);
+    const [amm] = PublicKey.findProgramAddressSync(
+      [Buffer.from("amm")],
+      PROGRAM_ID
+    );
     const [pool] = PublicKey.findProgramAddressSync(
       [Buffer.from("pool"), amm.toBuffer(), mintA.toBuffer(), mintB.toBuffer()],
       PROGRAM_ID
@@ -105,12 +107,8 @@ export async function POST(request: NextRequest) {
     const depositorAccountB = await getAssociatedTokenAddress(mintB, depositor);
     const depositorAccountLiquidity = await getAssociatedTokenAddress(mintLiquidity, depositor);
 
-    const tokenProgram = new PublicKey(
-      "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-    );
-    const associatedTokenProgram = new PublicKey(
-      "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
-    );
+    const tokenProgram = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
+    const associatedTokenProgram = new PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
     const systemProgram = new PublicKey("11111111111111111111111111111111");
 
     const instructionData = getInstructionData(
@@ -120,67 +118,96 @@ export async function POST(request: NextRequest) {
       feesBN,
       false // useEntireAmount (hardcoded to false)
     );
+    const connection = new Connection(ENDPOINT);
 
-    // Set up a connection and load a server wallet from an environment variable.
-    const connection = new Connection(ENDPOINT, "confirmed");
-    // const secretKeyString = "4vERsJWbE3nGh2gPkCxx4TN6dfYVtvnGqyuX4WL3oNxC6s45gQboBikEEUfXkq5qySctJWjwZfjZdoVmPPqpo7Lc"; // Ensure this variable is set!
-    // if (!secretKeyString) {
-    //   throw new Error("Missing SERVER_WALLET environment variable.");
-    // }
-    // const secretKey = Uint8Array.from(JSON.parse(secretKeyString));
-    // const walletKeypair = Keypair.fromSecretKey(secretKey);
-    const wallet = MockWallet;
+    // const depositIx = new TransactionInstruction({
+    //   programId: new PublicKey("DX4TnoHCQoCCLC5pg7K49CMb9maMA3TMfHXiPBD55G1w"),
+    //   keys: [
+    //     { pubkey: amm, isSigner: false, isWritable: false },
+    //     { pubkey: pool, isSigner: false, isWritable: false },
+    //     { pubkey: depositor, isSigner: true, isWritable: true },
+    //     { pubkey: mintLiquidity, isSigner: false, isWritable: true },
+    //     { pubkey: mintA, isSigner: false, isWritable: false },
+    //     { pubkey: mintB, isSigner: false, isWritable: false },
+    //     { pubkey: poolAccountA, isSigner: false, isWritable: true },
+    //     { pubkey: poolAccountB, isSigner: false, isWritable: true },
+    //     { pubkey: depositorAccountLiquidity, isSigner: false, isWritable: true },
+    //     { pubkey: depositorAccountA, isSigner: false, isWritable: true },
+    //     { pubkey: depositorAccountB, isSigner: false, isWritable: true },
+    //     { pubkey: tokenProgram, isSigner: false, isWritable: false },
+    //     { pubkey: associatedTokenProgram, isSigner: false, isWritable: false },
+    //     { pubkey: systemProgram, isSigner: false, isWritable: false },
+    //     { pubkey: reference, isSigner: false, isWritable: false }
+    //   ],
+    //   data: instructionData,
+    // });
+    console.log(account);
 
-    // Create an Anchor provider (server-side)
-    const provider = new AnchorProvider(connection, wallet, {
-      commitment: "confirmed",
-    });
 
-    // Get the program instance using your helper (ensure getDexProgram is server-compatible)
+    // const incrementIx = new TransactionInstruction({
+    //   programId: PROGRAM_ID, // Your program's ID
+    //   keys: [
+    //     { pubkey: new PublicKey("4TeGWrrqMHW43r2QVYctp993pD6tAb4ZW4dxHJDNqmBR"), isSigner: false, isWritable: true },
+    //     { pubkey: depositor, isSigner: true, isWritable: true }, 
+    //     { pubkey: reference, isSigner: false, isWritable: false },
+    //   ],
+    //   data: data, 
+    // });
+
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    // const provider = useAnchorProvider();
+    const dummyWallet = {
+      publicKey: depositor,
+      signTransaction: async (tx: Transaction | web3.VersionedTransaction) => tx,
+      signAllTransactions: async (txs: (Transaction | web3.VersionedTransaction)[]) => txs,
+      // Add the missing required method
+      signMessage: async (message: Uint8Array) => Uint8Array.from([])
+    };
+    const provider = new AnchorProvider(
+      connection,
+      dummyWallet as any,
+      AnchorProvider.defaultOptions()
+    );
     const program = getDexProgram(provider);
 
-    // Build the deposit liquidity instruction using Anchor's methods
-    const depositIX = await program.methods
-      .depositLiquidity(depositAmountABN, depositAmountBBN, minLiquidityBN, feesBN, true)
-      .accounts({
-        // @ts-ignore
-        amm: amm,
-        pool: pool,
-        depositor: depositor,
-        mintLiquidity: mintLiquidity,
-        mintA: mintA,
-        mintB: mintB,
-        poolAccountA: poolAccountA,
-        poolAccountB: poolAccountB,
-        depositorAccountLiquidity: depositorAccountLiquidity,
-        depositorAccountA: depositorAccountA,
-        depositorAccountB: depositorAccountB,
-        tokenProgram: tokenProgram,
-        associatedTokenProgram: associatedTokenProgram,
-        systemProgram: systemProgram,
-      })
-      .instruction();
+    const depositIx = await program.methods.depositLiquidity(depositAmountABN, depositAmountBBN, minLiquidityBN, feesBN, true).accounts({
+      // @ts-ignore
+      amm: amm,
+      pool: pool,
+      depositor: depositor,
+      mintLiquidity: mintLiquidity,
+      mintA: mintA,
+      mintB: mintB,
+      poolAccountA: poolAccountA,
+      poolAccountB: poolAccountB,
+      depositorAccountLiquidity: depositorAccountLiquidity,
+      depositorAccountA: depositorAccountA,
+      depositorAccountB: depositorAccountB,
+      tokenProgram: tokenProgram,
+      associatedTokenProgram: associatedTokenProgram,
+      systemProgram: systemProgram
+    }).instruction();
 
-    // Optionally add the reference account if needed:
-    depositIX.keys.push({
+    depositIx.keys.push({
       pubkey: reference,
       isSigner: false,
       isWritable: false,
     });
 
-    // Build the transaction
-    const transaction = new Transaction().add(depositIX);
+
+    
+    const transaction = new Transaction().add(depositIx);
     const { blockhash } = await connection.getLatestBlockhash();
     transaction.recentBlockhash = blockhash;
     transaction.feePayer = depositor;
-    console.log("Transaction:", transaction);
+    console.log("transction",transaction);
 
     const serializedTransaction = transaction.serialize({
       verifySignatures: false,
       requireAllSignatures: false,
     });
     const base64Transaction = serializedTransaction.toString("base64");
-    console.log("Serialized Transaction (base64):", base64Transaction);
+    console.log("base64Transaction",base64Transaction);
 
     return NextResponse.json(
       {
@@ -194,6 +221,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 }
+
 
 const getInstructionData = (
   depositAmountA: BN,
