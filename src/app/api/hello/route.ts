@@ -1,158 +1,55 @@
-import { clusterApiUrl, PublicKey,Connection, TransactionMessage, VersionedTransaction, SystemProgram, Transaction, Keypair, TransactionInstruction } from "@solana/web3.js";
+import { Connection, Transaction, TransactionInstruction, clusterApiUrl, PublicKey } from "@solana/web3.js";
 import { NextRequest, NextResponse } from "next/server";
 import { sha256 } from "js-sha256";
-import { getAssociatedTokenAddress } from "@solana/spl-token";
 import BN from "bn.js";
-import { FastBackwardFilled } from "@ant-design/icons";
-// type GetData = {
-//   label: string;
-//   icon: string;
-// };
-// Devnet 'fake' USDC, you can get these tokens from https://spl-token-faucet.com/
-// const USDC_ADDRESS = new PublicKey("Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr");
-const ENDPOINT = clusterApiUrl("devnet");
-// const NFT_NAME = "Golden Ticket";
-// const PRICE_USDC = 0.1;
-// type InputData = {
-//   account: string;
-// };
-type Data = {
-  label?: string;
-  icon?: string;
-  transaction?: string;
-  message?: string;
-};
-export type PostError = {
-  error: string;
-};
+import { getAssociatedTokenAddress } from "@solana/spl-token";
 
+const ENDPOINT = clusterApiUrl("devnet");
 const PROGRAM_ID = new PublicKey("DX4TnoHCQoCCLC5pg7K49CMb9maMA3TMfHXiPBD55G1w");
 
-const DISCRIMINATOR = sha256.digest('global:increment').slice(0,8);
-const data = Buffer.from([...DISCRIMINATOR])
-export async function GET(
-  request: NextRequest,
-  response: NextResponse<Data>
-) {
-  console.log(new URL(request.url));
-  const label = "Solana Pay";
+const DISCRIMINATOR = sha256.digest('global:increment').slice(0, 8);
+const data = Buffer.from([...DISCRIMINATOR]);
+
+export async function GET(request: NextRequest) {
+  const label = "Add Liquidity"; // More descriptive label
   const icon = 'https://avatars.githubusercontent.com/u/92437260?v=4';
 
-  return NextResponse.json({label,icon},{status:200});
+  return NextResponse.json({ label, icon }, { status: 200 });
 }
-
-
-// export async function POST(request: NextRequest) {
-//   try {
-//     // Parse the request body
-//     const body = await request.json();
-//     const accountField = body?.account;
-
-//     if (!accountField) {
-//       throw new Error("Missing account field in the request body.");
-//     }
-
-//     const { searchParams } = new URL(request.url);
-//     const referenceParam = searchParams.get('reference');
-//     if (!referenceParam) {
-//       throw new Error('Missing reference in the URL query parameters.');
-//     }
-//     const reference = new PublicKey(referenceParam);
-//     // const reference = new Keypair().publicKey;
-//     // console.log(reference.toBase58());
-
-//     // Create PublicKey for sender
-//     const sender = new PublicKey(accountField);
-//     // console.log(sender);
-//     // Load merchant private key
-
-
-//     // Create the increment instruction
-//     const incrementIx = new TransactionInstruction({
-//       programId: new PublicKey("AAwQy1UeenPqH6poqtiR6sKePDgeF2YcnHmy2jSNYRL6"), // Your program's ID
-//       keys: [
-//         { pubkey: new PublicKey("4TeGWrrqMHW43r2QVYctp993pD6tAb4ZW4dxHJDNqmBR"), isSigner: false, isWritable: true },
-//         { pubkey: sender, isSigner: true, isWritable: true }, 
-//         { pubkey: reference, isSigner: false, isWritable: false },
-//       ],
-//       data: data, 
-//     });
-
-//     // Create the transaction
-//     let transaction = new Transaction().add(incrementIx);
-
-//     const connection = new Connection(ENDPOINT);
-//     const { blockhash } = await connection.getLatestBlockhash();
-//     transaction.recentBlockhash = blockhash;
-//     transaction.feePayer = sender;
-
-//     // transaction.partialSign(merchant)
-
-//     // transaction = Transaction.from(transaction.serialize({
-//     //   verifySignatures:false,
-//     //   requireAllSignatures:false
-//     // }))
-
-//     const serializedTransaction = transaction.serialize({
-//       verifySignatures:false,
-//       requireAllSignatures:false
-//     });
-//     const base64Transaction = serializedTransaction.toString("base64");
-//     console.log(base64Transaction);
-//     // Send the transaction
-  
-
-//     return NextResponse.json(
-//       { transaction: base64Transaction,message: "Transaction sent successfully"},
-//       { status: 200 }
-//     );
-//   } catch (error: any) {
-//     return NextResponse.json({ error: error.message }, { status: 400 });
-//   }
-// }
 
 export async function POST(request: NextRequest) {
   try {
-    console.log("hello");
-
     const body = await request.json();
-    // Access a property (for instance, 'account') from the body
     const accountField = body?.account;
-    const depositor = new PublicKey(accountField);
-    const {searchParams}  = new URL(request.url);
-    console.log("hello---", searchParams);
-    console.log("Parsed account from body:", depositor);
+    const { searchParams } = new URL(request.url);
+    const referenceParam = searchParams.get('reference');
 
+    if (!accountField || !referenceParam) {
+      return NextResponse.json({ error: "Missing account or reference." }, { status: 400 });
+    }
+
+    const reference = new PublicKey(referenceParam);
+    const depositor = new PublicKey(accountField);
     const mintAPubkey = searchParams.get("mintA");
     const mintBPubkey = searchParams.get("mintB");
     const depositAmountA = searchParams.get("depositAmountA");
     const depositAmountB = searchParams.get("depositAmountB");
     const minLiquidity = searchParams.get("minLiquidity");
     const fees = searchParams.get("fees");
-    const referenceParam = searchParams.get("reference");
-// http://localhost:3000/api/hello?mintA=Gvi3gqecizXrhEKpaqKPMz4VduHyu6KULTURKNq577AE&mintB=7UqEjPkUV3aL8aMJToVMGHXHXLAKotAgvTGQPJf72J3m&depositAmountA=1000000&depositAmountB=10000000&minLiquidity=100&fees=100&reference=7aqEjPkUV3aL8aMJToVMGHXHXLAKotAgvTGQPJf72J3m
+
     if (
-      !depositor ||
       !mintAPubkey ||
       !mintBPubkey ||
       !depositAmountA ||
       !depositAmountB ||
       !minLiquidity ||
-      !fees ||
-      !referenceParam
+      !fees
     ) {
-      throw new Error("Missing required fields in request parameters.");
-    }
-    if (!referenceParam){
-      throw new Error("missing reference");
+      return NextResponse.json({ error: "Missing required parameters." }, { status: 400 });
     }
 
-    const reference = new PublicKey(referenceParam);
-    console.log("reference =>", reference.toString());
-    // const depositor = new PublicKey(account);
     const mintA = new PublicKey(mintAPubkey);
     const mintB = new PublicKey(mintBPubkey);
-
     const depositAmountABN = new BN(depositAmountA);
     const depositAmountBBN = new BN(depositAmountB);
     const minLiquidityBN = new BN(minLiquidity);
@@ -163,35 +60,27 @@ export async function POST(request: NextRequest) {
       [Buffer.from("amm")],
       PROGRAM_ID
     );
-    console.log("amm", amm.toString());
     const [pool] = PublicKey.findProgramAddressSync(
       [Buffer.from("pool"), amm.toBuffer(), mintA.toBuffer(), mintB.toBuffer()],
       PROGRAM_ID
     );
-    console.log("pool", pool.toString());
     const [mintLiquidity] = PublicKey.findProgramAddressSync(
       [Buffer.from("liquidity"), pool.toBuffer()],
       PROGRAM_ID
     );
-    console.log("mintliqidity", mintLiquidity.toString());
     const [poolAccountA] = PublicKey.findProgramAddressSync(
       [Buffer.from("pool-account-a"), pool.toBuffer(), mintA.toBuffer()],
       PROGRAM_ID
     );
-    console.log("poolAccountA", poolAccountA.toString());
     const [poolAccountB] = PublicKey.findProgramAddressSync(
       [Buffer.from("pool-account-b"), pool.toBuffer(), mintB.toBuffer()],
       PROGRAM_ID
     );
-    console.log("poolAccountB", poolAccountB.toString());
 
     // User associated token accounts
     const depositorAccountA = await getAssociatedTokenAddress(mintA, depositor);
-    console.log("depositorAccountA", depositorAccountA.toString());
     const depositorAccountB = await getAssociatedTokenAddress(mintB, depositor);
-    console.log("depositorAccountB", depositorAccountB.toString());
     const depositorAccountLiquidity = await getAssociatedTokenAddress(mintLiquidity, depositor);
-    console.log("depositorAccountLiquidity", depositorAccountLiquidity.toString());
 
     const tokenProgram = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
     const associatedTokenProgram = new PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
@@ -204,7 +93,6 @@ export async function POST(request: NextRequest) {
       feesBN,
       false // useEntireAmount (hardcoded to false)
     );
-    console.log(instructionData);
 
     const depositIX = new TransactionInstruction({
       programId: PROGRAM_ID,
@@ -223,24 +111,9 @@ export async function POST(request: NextRequest) {
         { pubkey: tokenProgram, isSigner: false, isWritable: false },
         { pubkey: associatedTokenProgram, isSigner: false, isWritable: false },
         { pubkey: systemProgram, isSigner: false, isWritable: false },
-        // { pubkey: reference, isSigner: false, isWritable: false }
       ],
       data: instructionData,
     });
-    // depositIX.keys.push({
-    //   pubkey: reference, isSigner: false, isWritable: false
-    // });
-
-    // const incrementIx = new TransactionInstruction({
-    //   programId: new PublicKey("AAwQy1UeenPqH6poqtiR6sKePDgeF2YcnHmy2jSNYRL6"), // Your program's ID
-    //   keys: [
-    //     { pubkey: new PublicKey("4TeGWrrqMHW43r2QVYctp993pD6tAb4ZW4dxHJDNqmBR"), isSigner: false, isWritable: true },
-    //     { pubkey: account, isSigner: true, isWritable: true }, 
-    //     { pubkey: reference, isSigner: false, isWritable: false },
-    //   ],
-    //   data: data, 
-    // });
-    // console.log(incrementIx)
 
     const connection = new Connection(ENDPOINT);
     const transaction = new Transaction().add(depositIX);
@@ -266,7 +139,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 }
-
 
 const getInstructionData = (
   depositAmountA: BN,
