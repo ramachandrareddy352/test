@@ -141,11 +141,11 @@ export async function POST(request: NextRequest) {
       systemProgram: systemProgram
     }).instruction();
 
-    depositIX.keys.push({
-      pubkey: reference,
-      isSigner: false,
-      isWritable: false,
-    });
+    // depositIX.keys.push({
+    //   pubkey: reference,
+    //   isSigner: false,
+    //   isWritable: false,
+    // });
 
     // const depositIX = new TransactionInstruction({
     //   programId: new PublicKey("DX4TnoHCQoCCLC5pg7K49CMb9maMA3TMfHXiPBD55G1w"),
