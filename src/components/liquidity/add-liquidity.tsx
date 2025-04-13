@@ -74,7 +74,7 @@ export function AddLiquidity() {
     try {
       // Set minLiquidity (adjust this based on your logic; 0 is a placeholder)
       const minLiquidity = 101; // You may need to calculate this or allow user input
-      setReference(new Keypair().publicKey);
+      // setReference(new Keypair().publicKey);
 
       const params = new URLSearchParams();
       params.append("reference", reference.toString());
