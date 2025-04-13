@@ -37,7 +37,7 @@ export function SolanaProvider({ children }: { children: ReactNode }) {
         <WalletModalProvider>{children}</WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>
-  ); 
+  );
 }
 
 export function useAnchorProvider() {
