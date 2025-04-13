@@ -68,7 +68,7 @@ export function AddLiquidity() {
       return;
     }
     console.log("stage-1");
-    setShowQR(true);
+    
     setPaymentStatus("Preparing transaction...");
   
     try {
@@ -99,6 +99,7 @@ export function AddLiquidity() {
       if (qrRef.current) {
         qrRef.current.innerHTML = "";
         qr.append(qrRef.current);
+        setShowQR(true);
         console.log("appended");
       }
       setPaymentStatus("Pending...");
