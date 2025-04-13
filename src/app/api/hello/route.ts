@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { sha256 } from "js-sha256";
 import BN from "bn.js";
 import { getAssociatedTokenAddress } from "@solana/spl-token";
+import {getDexProgram} from "../../../../anchor/src";
+import { useAnchorProvider } from "../../../components/solana/solana-provider";
+// "../../solana/solana-provider";
 // type GetData = {
 //   label: string;
 //   icon: string;
@@ -116,39 +119,67 @@ export async function POST(request: NextRequest) {
       false // useEntireAmount (hardcoded to false)
     );
 
-    const depositIX = new TransactionInstruction({
-      programId: new PublicKey("DX4TnoHCQoCCLC5pg7K49CMb9maMA3TMfHXiPBD55G1w"),
-      keys: [
-        { pubkey: amm, isSigner: false, isWritable: false },
-        { pubkey: pool, isSigner: false, isWritable: false },
-        { pubkey: depositor, isSigner: true, isWritable: true },
-        { pubkey: mintLiquidity, isSigner: false, isWritable: true },
-        { pubkey: mintA, isSigner: false, isWritable: false },
-        { pubkey: mintB, isSigner: false, isWritable: false },
-        { pubkey: poolAccountA, isSigner: false, isWritable: true },
-        { pubkey: poolAccountB, isSigner: false, isWritable: true },
-        { pubkey: depositorAccountLiquidity, isSigner: false, isWritable: true },
-        { pubkey: depositorAccountA, isSigner: false, isWritable: true },
-        { pubkey: depositorAccountB, isSigner: false, isWritable: true },
-        { pubkey: tokenProgram, isSigner: false, isWritable: false },
-        { pubkey: associatedTokenProgram, isSigner: false, isWritable: false },
-        { pubkey: systemProgram, isSigner: false, isWritable: false },
-        // { pubkey: reference, isSigner: false, isWritable: false }
-      ],
-      data: instructionData,
-    });
-    const incrementIx = new TransactionInstruction({
-      programId: PROGRAM_ID, // Your program's ID
-      keys: [
-        { pubkey: new PublicKey("4TeGWrrqMHW43r2QVYctp993pD6tAb4ZW4dxHJDNqmBR"), isSigner: false, isWritable: true },
-        { pubkey: depositor, isSigner: true, isWritable: true }, 
-        { pubkey: reference, isSigner: false, isWritable: false },
-      ],
-      data: data, 
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const provider = useAnchorProvider();
+    const program = getDexProgram(provider);
+
+    const depositIX = await program.methods.depositLiquidity(depositAmountABN, depositAmountBBN, minLiquidityBN, feesBN, true).accounts({
+      // @ts-ignore
+      amm: amm,
+      pool: pool,
+      depositor: depositor,
+      mintLiquidity: mintLiquidity,
+      mintA: mintA,
+      mintB: mintB,
+      poolAccountA: poolAccountA,
+      poolAccountB: poolAccountB,
+      depositorAccountLiquidity: depositorAccountLiquidity,
+      depositorAccountA: depositorAccountA,
+      depositorAccountB: depositorAccountB,
+      tokenProgram: tokenProgram,
+      associatedTokenProgram: associatedTokenProgram,
+      systemProgram: systemProgram
+    }).instruction();
+
+    depositIX.keys.push({
+      pubkey: reference,
+      isSigner: false,
+      isWritable: false,
     });
 
+    // const depositIX = new TransactionInstruction({
+    //   programId: new PublicKey("DX4TnoHCQoCCLC5pg7K49CMb9maMA3TMfHXiPBD55G1w"),
+    //   keys: [
+    //     { pubkey: amm, isSigner: false, isWritable: false },
+    //     { pubkey: pool, isSigner: false, isWritable: false },
+    //     { pubkey: depositor, isSigner: true, isWritable: true },
+    //     { pubkey: mintLiquidity, isSigner: false, isWritable: true },
+    //     { pubkey: mintA, isSigner: false, isWritable: false },
+    //     { pubkey: mintB, isSigner: false, isWritable: false },
+    //     { pubkey: poolAccountA, isSigner: false, isWritable: true },
+    //     { pubkey: poolAccountB, isSigner: false, isWritable: true },
+    //     { pubkey: depositorAccountLiquidity, isSigner: false, isWritable: true },
+    //     { pubkey: depositorAccountA, isSigner: false, isWritable: true },
+    //     { pubkey: depositorAccountB, isSigner: false, isWritable: true },
+    //     { pubkey: tokenProgram, isSigner: false, isWritable: false },
+    //     { pubkey: associatedTokenProgram, isSigner: false, isWritable: false },
+    //     { pubkey: systemProgram, isSigner: false, isWritable: false },
+    //     // { pubkey: reference, isSigner: false, isWritable: false }
+    //   ],
+    //   data: instructionData,
+    // });
+    // const incrementIx = new TransactionInstruction({
+    //   programId: PROGRAM_ID, // Your program's ID
+    //   keys: [
+    //     { pubkey: new PublicKey("4TeGWrrqMHW43r2QVYctp993pD6tAb4ZW4dxHJDNqmBR"), isSigner: false, isWritable: true },
+    //     { pubkey: depositor, isSigner: true, isWritable: true }, 
+    //     { pubkey: reference, isSigner: false, isWritable: false },
+    //   ],
+    //   data: data, 
+    // });
+
     const connection = new Connection(ENDPOINT);
-    const transaction = new Transaction().add(incrementIx);
+    const transaction = new Transaction().add(depositIX);
     const { blockhash } = await connection.getLatestBlockhash();
     transaction.recentBlockhash = blockhash;
     transaction.feePayer = depositor;

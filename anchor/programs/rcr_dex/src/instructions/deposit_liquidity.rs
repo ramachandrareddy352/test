@@ -15,7 +15,7 @@ pub fn deposit_liquidity(
     fees: u64,
     _use_entire_amount: bool,
 ) -> Result<()> {
-    // Prevent depositing assets the depositor does not own
+    // Prevent depositing assets the  depositor does not own
     require!(fees == ctx.accounts.pool.fees, Errors::InvalidFee);
     require!(
         amount_a <= ctx.accounts.depositor_account_a.amount,
