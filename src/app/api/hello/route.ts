@@ -148,6 +148,7 @@ export async function POST(request: NextRequest) {
     }
 
     const reference = new PublicKey(referenceParam);
+    console.log("reference =>", reference.toString());
     // const depositor = new PublicKey(account);
     const mintA = new PublicKey(mintAPubkey);
     const mintB = new PublicKey(mintBPubkey);
