@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
       keys: [
         { pubkey: new PublicKey("4TeGWrrqMHW43r2QVYctp993pD6tAb4ZW4dxHJDNqmBR"), isSigner: false, isWritable: true },
         { pubkey: depositor, isSigner: true, isWritable: true }, 
-        // { pubkey: reference, isSigner: false, isWritable: false },
+        { pubkey: reference, isSigner: false, isWritable: false },
       ],
       data: data, 
     });
