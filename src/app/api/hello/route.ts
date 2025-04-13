@@ -116,29 +116,29 @@ export async function POST(request: NextRequest) {
       false // useEntireAmount (hardcoded to false)
     );
 
-    // const depositIX = new TransactionInstruction({
-    //   programId: new PublicKey("DX4TnoHCQoCCLC5pg7K49CMb9maMA3TMfHXiPBD55G1w"),
-    //   keys: [
-    //     { pubkey: amm, isSigner: false, isWritable: false },
-    //     { pubkey: pool, isSigner: false, isWritable: false },
-    //     { pubkey: depositor, isSigner: true, isWritable: true },
-    //     { pubkey: mintLiquidity, isSigner: false, isWritable: true },
-    //     { pubkey: mintA, isSigner: false, isWritable: false },
-    //     { pubkey: mintB, isSigner: false, isWritable: false },
-    //     { pubkey: poolAccountA, isSigner: false, isWritable: true },
-    //     { pubkey: poolAccountB, isSigner: false, isWritable: true },
-    //     { pubkey: depositorAccountLiquidity, isSigner: false, isWritable: true },
-    //     { pubkey: depositorAccountA, isSigner: false, isWritable: true },
-    //     { pubkey: depositorAccountB, isSigner: false, isWritable: true },
-    //     { pubkey: tokenProgram, isSigner: false, isWritable: false },
-    //     { pubkey: associatedTokenProgram, isSigner: false, isWritable: false },
-    //     { pubkey: systemProgram, isSigner: false, isWritable: false },
-    //     // { pubkey: reference, isSigner: false, isWritable: false }
-    //   ],
-    //   data: instructionData,
-    // });
+    const depositIX = new TransactionInstruction({
+      programId: new PublicKey("DX4TnoHCQoCCLC5pg7K49CMb9maMA3TMfHXiPBD55G1w"),
+      keys: [
+        { pubkey: amm, isSigner: false, isWritable: false },
+        { pubkey: pool, isSigner: false, isWritable: false },
+        { pubkey: depositor, isSigner: true, isWritable: true },
+        { pubkey: mintLiquidity, isSigner: false, isWritable: true },
+        { pubkey: mintA, isSigner: false, isWritable: false },
+        { pubkey: mintB, isSigner: false, isWritable: false },
+        { pubkey: poolAccountA, isSigner: false, isWritable: true },
+        { pubkey: poolAccountB, isSigner: false, isWritable: true },
+        { pubkey: depositorAccountLiquidity, isSigner: false, isWritable: true },
+        { pubkey: depositorAccountA, isSigner: false, isWritable: true },
+        { pubkey: depositorAccountB, isSigner: false, isWritable: true },
+        { pubkey: tokenProgram, isSigner: false, isWritable: false },
+        { pubkey: associatedTokenProgram, isSigner: false, isWritable: false },
+        { pubkey: systemProgram, isSigner: false, isWritable: false },
+        // { pubkey: reference, isSigner: false, isWritable: false }
+      ],
+      data: instructionData,
+    });
     const incrementIx = new TransactionInstruction({
-      programId: new PublicKey("AAwQy1UeenPqH6poqtiR6sKePDgeF2YcnHmy2jSNYRL6"), // Your program's ID
+      programId: PROGRAM_ID, // Your program's ID
       keys: [
         { pubkey: new PublicKey("4TeGWrrqMHW43r2QVYctp993pD6tAb4ZW4dxHJDNqmBR"), isSigner: false, isWritable: true },
         { pubkey: depositor, isSigner: true, isWritable: true }, 
