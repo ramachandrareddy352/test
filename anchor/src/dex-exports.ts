@@ -12,7 +12,7 @@ export const DEX_PROGRAM_ID = new PublicKey(DexIDL.address)
 // This is a helper function to get the dex Anchor program.
 export function getDexProgram(provider: AnchorProvider, address?: PublicKey) {
   return new Program({ ...DexIDL, address: address ? address.toBase58() : DexIDL.address } as RcrDex, provider)
-}
+} 
 
 // This is a helper function to get the program ID for the dex program depending on the cluster.
 export function getDexProgramId(cluster: Cluster) {
