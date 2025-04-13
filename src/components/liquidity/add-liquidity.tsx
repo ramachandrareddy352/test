@@ -70,36 +70,32 @@ export function AddLiquidity() {
     console.log("stage-1");
     setShowQR(true);
     setPaymentStatus("Preparing transaction...");
-
+  
     try {
-      // Set minLiquidity (adjust this based on your logic; 0 is a placeholder)
-      const minLiquidity = 101; // You may need to calculate this or allow user input
+      // Set minLiquidity (adjust this based on your logic; 101 as a placeholder)
+      const minLiquidity = 101;
       const reference = new Keypair().publicKey;
-
+  
       const params = new URLSearchParams();
       params.append("reference", reference.toString());
-      // ["account", publicKey.toString()],
       params.append("mintA", tokenOne.tokenMint);
       params.append("mintB", tokenTwo.tokenMint);
-      // Update query parameter names to match route.ts expectations.
       params.append("depositAmountA", tokenOneAmount.toString());
       params.append("depositAmountB", tokenTwoAmount.toString());
       params.append("minLiquidity", minLiquidity.toString());
       params.append("fees", fees.toString());
-
-      const apiUrl = `${location.protocol}//${
-        location.host
-      }/api/hello?${params.toString()}`;
+  
+      const apiUrl = `${location.protocol}//${location.host}/api/hello?${params.toString()}`;
       // Encode the API URL into a QR code
       const urlFields: TransactionRequestURLFields = {
         link: new URL(apiUrl),
       };
       console.log(apiUrl);
-
+  
       const url = encodeURL(urlFields);
       const qr = createQR(url, 360, "white", "black");
       console.log(url);
-
+  
       if (qrRef.current) {
         qrRef.current.innerHTML = "";
         qr.append(qrRef.current);
@@ -107,36 +103,41 @@ export function AddLiquidity() {
       }
       setPaymentStatus("Pending...");
       console.log("\n5. Find the transaction");
-
-      const signatureInfo = await new Promise<ConfirmedSignatureInfo>(
+  
+      const signatureInfo: ConfirmedSignatureInfo = await new Promise(
         (resolve, reject) => {
-          const interval = setInterval(async () => {
+          // Start checking every 2 seconds
+          const intervalId = setInterval(async () => {
             console.count("Checking for transaction...");
             try {
               const result = await findReference(connection, reference, {
                 finality: "confirmed",
               });
-              console.log(result);
+              // Transaction found, stop further checks.
+              clearInterval(intervalId);
+              clearTimeout(timeoutId);
               console.log("\n 🖌  Signature found: ", result.signature);
-              clearInterval(interval);
               resolve(result);
             } catch (error: any) {
               if (!(error instanceof FindReferenceError)) {
-                // console.error(error);
-                clearInterval(interval);
+                clearInterval(intervalId);
+                clearTimeout(timeoutId);
                 reject(error);
               }
             }
           }, 2000);
-          //  Add a timeout of 5 minutes
-          const timeout = setTimeout(() => {
-            clearInterval(interval);
+  
+          // Set a timeout to stop checking after 2 minutes
+          const timeoutId = setTimeout(() => {
+            clearInterval(intervalId);
             console.log("❌ Payment timeout reached.");
             setPaymentStatus("Timeout Reached");
             reject(new Error("Payment timeout reached"));
-          }, 2 * 60 * 1000); // 5 minutes in milliseconds
+          }, 2 * 60 * 1000); // 2 minutes timeout
         }
       );
+  
+      setShowQR(false);
       let { signature } = signatureInfo;
       setPaymentStatus("Confirmed");
       const transaction = await connection.getTransaction(signature, {
@@ -158,6 +159,7 @@ export function AddLiquidity() {
       setShowQR(false);
     }
   };
+  
   // ----------- End Solana Pay code -----------
 
   const addLiquidity = async () => {
