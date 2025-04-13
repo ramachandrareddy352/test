@@ -28,7 +28,7 @@ export type PostError = {
   error: string;
 };
 
-const PROGRAM_ID = new PublicKey("AAwQy1UeenPqH6poqtiR6sKePDgeF2YcnHmy2jSNYRL6");
+const PROGRAM_ID = new PublicKey("DX4TnoHCQoCCLC5pg7K49CMb9maMA3TMfHXiPBD55G1w");
 const DISCRIMINATOR = sha256.digest("global:increment").slice(0, 8);
 const dataBuffer = Buffer.from([...DISCRIMINATOR]);
 
