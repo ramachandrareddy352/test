@@ -227,9 +227,9 @@ export async function POST(request: NextRequest) {
       ],
       data: instructionData,
     });
-    depositIX.keys.push({
-      pubkey: reference, isSigner: false, isWritable: false
-    });
+    // depositIX.keys.push({
+    //   pubkey: reference, isSigner: false, isWritable: false
+    // });
 
     // const incrementIx = new TransactionInstruction({
     //   programId: new PublicKey("AAwQy1UeenPqH6poqtiR6sKePDgeF2YcnHmy2jSNYRL6"), // Your program's ID
