@@ -1,5 +1,5 @@
 {
-  "address": "DX4TnoHCQoCCLC5pg7K49CMb9maMA3TMfHXiPBD55G1w",
+  "address": "3wGvWeUNnuL9kq2iWFN1gPm7EpUMVjWdJoLodwqpMtdy",
   "metadata": {
     "name": "rcr_dex",
     "version": "0.1.0",
@@ -7,37 +7,6 @@
     "description": "Created with Anchor"
   },
   "instructions": [
-    {
-      "name": "change_amm_admin",
-      "discriminator": [130, 88, 235, 133, 24, 247, 1, 208],
-      "accounts": [
-        {
-          "name": "amm",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [97, 109, 109]
-              }
-            ]
-          }
-        },
-        {
-          "name": "new_admin"
-        },
-        {
-          "name": "payer",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": []
-    },
     {
       "name": "create_amm",
       "discriminator": [242, 91, 21, 170, 5, 68, 125, 64],
@@ -53,10 +22,6 @@
               }
             ]
           }
-        },
-        {
-          "name": "admin",
-          "docs": ["check : Adding a admin to the AMM"]
         },
         {
           "name": "payer",
@@ -94,6 +59,10 @@
               {
                 "kind": "const",
                 "value": [112, 111, 111, 108]
+              },
+              {
+                "kind": "arg",
+                "path": "fees"
               },
               {
                 "kind": "account",
@@ -177,12 +146,6 @@
           }
         },
         {
-          "name": "admin",
-          "docs": ["check : Adding a admin to the AMM"],
-          "writable": true,
-          "relations": ["amm"]
-        },
-        {
           "name": "payer",
           "docs": ["The account paying for all rents"],
           "writable": true,
@@ -231,6 +194,10 @@
               {
                 "kind": "const",
                 "value": [112, 111, 111, 108]
+              },
+              {
+                "kind": "arg",
+                "path": "fees"
               },
               {
                 "kind": "account",
@@ -377,6 +344,10 @@
       ],
       "args": [
         {
+          "name": "fees",
+          "type": "u64"
+        },
+        {
           "name": "amount_a",
           "type": "u64"
         },
@@ -387,14 +358,6 @@
         {
           "name": "min_liquidity",
           "type": "u64"
-        },
-        {
-          "name": "fees",
-          "type": "u64"
-        },
-        {
-          "name": "use_entire_amount",
-          "type": "bool"
         }
       ]
     },
@@ -422,6 +385,10 @@
               {
                 "kind": "const",
                 "value": [112, 111, 111, 108]
+              },
+              {
+                "kind": "arg",
+                "path": "fees"
               },
               {
                 "kind": "account",
@@ -533,6 +500,10 @@
       ],
       "args": [
         {
+          "name": "fees",
+          "type": "u64"
+        },
+        {
           "name": "swap_a",
           "type": "bool"
         },
@@ -546,10 +517,6 @@
         },
         {
           "name": "delta_price_change",
-          "type": "u64"
-        },
-        {
-          "name": "fees",
           "type": "u64"
         }
       ]
@@ -580,6 +547,10 @@
                 "value": [112, 111, 111, 108]
               },
               {
+                "kind": "arg",
+                "path": "fees"
+              },
+              {
                 "kind": "account",
                 "path": "amm"
               },
@@ -689,6 +660,10 @@
       ],
       "args": [
         {
+          "name": "fees",
+          "type": "u64"
+        },
+        {
           "name": "swap_a",
           "type": "bool"
         },
@@ -702,10 +677,6 @@
         },
         {
           "name": "delta_price_change",
-          "type": "u64"
-        },
-        {
-          "name": "fees",
           "type": "u64"
         }
       ]
@@ -733,6 +704,10 @@
               {
                 "kind": "const",
                 "value": [112, 111, 111, 108]
+              },
+              {
+                "kind": "arg",
+                "path": "fees"
               },
               {
                 "kind": "account",
@@ -877,6 +852,10 @@
       ],
       "args": [
         {
+          "name": "fees",
+          "type": "u64"
+        },
+        {
           "name": "liquidity_amount",
           "type": "u64"
         },
@@ -886,10 +865,6 @@
         },
         {
           "name": "min_amount_b",
-          "type": "u64"
-        },
-        {
-          "name": "fees",
           "type": "u64"
         }
       ]
@@ -978,10 +953,6 @@
       "type": {
         "kind": "struct",
         "fields": [
-          {
-            "name": "admin",
-            "type": "pubkey"
-          },
           {
             "name": "pool_count",
             "type": "u16"

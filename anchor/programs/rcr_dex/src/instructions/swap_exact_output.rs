@@ -9,11 +9,11 @@ use crate::utils::*;
 
 pub fn swap_exact_output(
     ctx: Context<SwapExactOutput>,
+    fees: u64,
     swap_a: bool, // output should be mint_a
     output_amount: u64,
     max_input_amount: u64,
     delta_price_change: u64,
-    fees: u64,
 ) -> Result<()> {
     // Prevent depositing assets the depositor does not own
     require!(output_amount > 0, Errors::ZeroAmount);
@@ -34,19 +34,13 @@ pub fn swap_exact_output(
     let pool_b = &ctx.accounts.pool_account_b;
 
     let input_amount = if swap_a {
-        (output_amount.checked_mul(pool_b.amount).unwrap())
-            .checked_div(pool_a.amount.checked_sub(output_amount).unwrap())
-            .unwrap()
+        (output_amount * pool_b.amount) / (pool_a.amount - output_amount)
     } else {
-        (output_amount.checked_mul(pool_a.amount).unwrap())
-            .checked_div(pool_b.amount.checked_sub(output_amount).unwrap())
-            .unwrap()
+        (output_amount * pool_a.amount) / (pool_b.amount - output_amount)
     };
 
-    let fee_amount = (input_amount.checked_mul(fees).unwrap())
-        .checked_div(PRECISION)
-        .unwrap();
-    let taxed_input = input_amount.checked_add(fee_amount).unwrap();
+    let fee_amount = (input_amount * fees) / PRECISION;
+    let taxed_input = input_amount + fee_amount;
 
     require!(taxed_input <= max_input_amount, Errors::OutputTooHigh);
     require!(
@@ -63,8 +57,8 @@ pub fn swap_exact_output(
             delta_price_change >= get_price_percentage_changed(
                 pool_a.amount,
                 pool_b.amount,
-                pool_a.amount.checked_sub(output_amount).unwrap(),
-                pool_b.amount.checked_add(taxed_input).unwrap(),
+                pool_a.amount - output_amount,
+                pool_b.amount + taxed_input,
             ),
             Errors::InvalidPriceChange,
         );
@@ -73,8 +67,8 @@ pub fn swap_exact_output(
             delta_price_change >= get_price_percentage_changed(
                 pool_a.amount,
                 pool_b.amount,
-                pool_a.amount.checked_add(taxed_input).unwrap(),
-                pool_b.amount.checked_sub(output_amount).unwrap(),
+                pool_a.amount + taxed_input,
+                pool_b.amount - output_amount,
             ),
             Errors::InvalidPriceChange,
         );
@@ -160,6 +154,7 @@ fn get_price_percentage_changed(
 }
 
 #[derive(Accounts)]
+#[instruction(fees: u64)]
 pub struct SwapExactOutput<'info> {
     #[account(
         seeds = [b"amm"],
@@ -171,9 +166,10 @@ pub struct SwapExactOutput<'info> {
         mut,
         seeds = [
             b"pool",
+            fees.to_le_bytes().as_ref(),
             amm.key().as_ref(),
             mint_a.key().as_ref(),
-            mint_b.key().as_ref()
+            mint_b.key().as_ref(),
         ],
         bump = pool.pool_bump,
         has_one = amm,

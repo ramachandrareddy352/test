@@ -48,9 +48,6 @@ export function useDexProgram() {
     }) => {
       const mintAPubkey = new PublicKey(mintA);
       const mintBPubkey = new PublicKey(mintB);
-      const admin = new PublicKey(
-        "414C5ffjEmZaVdrptaA5TfWWNsLWFVM6aqZfPvwsxsmr"
-      );
 
       console.log(program.programId.toString());
 
@@ -63,6 +60,7 @@ export function useDexProgram() {
       const [poolAccount] = PublicKey.findProgramAddressSync(
         [
           Buffer.from("pool"),
+          new BN(fees).toArrayLike(Buffer, "le", 8),
           ammAccount.toBuffer(),
           mintAPubkey.toBuffer(),
           mintBPubkey.toBuffer(),
@@ -109,7 +107,6 @@ export function useDexProgram() {
           mintB: mintBPubkey,
           poolAccountA: poolAccountA,
           poolAccountB: poolAccountB,
-          admin: admin,
           payer: program.provider.publicKey,
           tokenProgram: new PublicKey(
             "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"

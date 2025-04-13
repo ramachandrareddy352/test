@@ -69,6 +69,7 @@ export function useDexProgram() {
         const [poolAccount] = PublicKey.findProgramAddressSync(
           [
             Buffer.from("pool"),
+            new BN(fees).toArrayLike(Buffer, "le", 8),
             ammAccount.toBuffer(),
             mintAPubkey.toBuffer(),
             mintBPubkey.toBuffer(),
@@ -118,11 +119,11 @@ export function useDexProgram() {
         if (traderAccountB) {
           return await program.methods
             .swapExactInput(
+              new BN(fees),
               swapA,
               new BN(inputAmount),
               new BN(1),
-              new BN(deltaPriceChange * 100),
-              new BN(fees)
+              new BN(deltaPriceChange * 100)
             )
             .accounts({
               // @ts-ignore
@@ -193,6 +194,7 @@ export function useDexProgram() {
         const [poolAccount] = PublicKey.findProgramAddressSync(
           [
             Buffer.from("pool"),
+            new BN(fees).toArrayLike(Buffer, "le", 8),
             ammAccount.toBuffer(),
             mintAPubkey.toBuffer(),
             mintBPubkey.toBuffer(),
@@ -245,12 +247,12 @@ export function useDexProgram() {
         if (traderAccountB) {
           await program.methods
             .swapExactOutput(
+              new BN(fees),
               swapA,
               new BN(outputAmount),
               // new BN(MAX),
               new BN(u64MAX),
-              new BN(deltaPriceChange),
-              new BN(fees)
+              new BN(deltaPriceChange)
             )
             .accounts({
               // @ts-ignore

@@ -15,6 +15,7 @@ import {
   SettingOutlined,
   InfoCircleOutlined,
 } from "@ant-design/icons";
+import BN from "bn.js";
 
 type TokenData = {
   tokenMint: string;
@@ -219,6 +220,9 @@ export default function Swaps() {
     setExactInput(true);
     const inputAmount = event.target.value;
     setTokenOneAmount(inputAmount);
+    console.log(inputAmount);
+    console.log(tokenOne);
+    console.log(tokenTwo);
 
     if (inputAmount !== "0" && inputAmount !== "" && tokenOne && tokenTwo) {
       try {
@@ -230,6 +234,7 @@ export default function Swaps() {
         const [poolAccount] = PublicKey.findProgramAddressSync(
           [
             Buffer.from("pool"),
+            new BN(fees).toArrayLike(Buffer, "le", 8),
             ammAccount.toBuffer(),
             tokenOne?.tokenMint > tokenTwo?.tokenMint
               ? new PublicKey(tokenOne?.tokenMint).toBuffer()
@@ -243,7 +248,7 @@ export default function Swaps() {
         const accountData = await program.account.pool.fetch(poolAccount);
         const poolAccountA = accountData.poolAccountA;
         const poolAccountB = accountData.poolAccountB;
-        const fees = Number(accountData.fees);
+        const fee = Number(accountData.fees);
         const balanceA = Number(
           (await getAccount(connection, poolAccountA)).amount
         );
@@ -251,13 +256,14 @@ export default function Swaps() {
           (await getAccount(connection, poolAccountB)).amount
         );
         const taxedInput =
-          inputAmount - parseInt(((inputAmount * fees) / 10000).toString());
+          inputAmount - parseInt(((inputAmount * fee) / 10000).toString());
         let outputAmount = 0;
         if (tokenOne.tokenMint < tokenTwo.tokenMint) {
           outputAmount = (taxedInput * balanceA) / (taxedInput + balanceB);
         } else {
           outputAmount = (taxedInput * balanceB) / (taxedInput + balanceA);
         }
+        console.log(outputAmount);
         setTokenTwoAmount(outputAmount);
       } catch (error) {
         setTokenTwoAmount(0);
@@ -282,6 +288,7 @@ export default function Swaps() {
         const [poolAccount] = PublicKey.findProgramAddressSync(
           [
             Buffer.from("pool"),
+            new BN(fees).toArrayLike(Buffer, "le", 8),
             ammAccount.toBuffer(),
             tokenOne?.tokenMint > tokenTwo?.tokenMint
               ? new PublicKey(tokenOne?.tokenMint).toBuffer()
@@ -295,7 +302,7 @@ export default function Swaps() {
         const accountData = await program.account.pool.fetch(poolAccount);
         const poolAccountA = accountData.poolAccountA;
         const poolAccountB = accountData.poolAccountB;
-        const fees = Number(accountData.fees);
+        const fee = Number(accountData.fees);
         const balanceA = Number(
           (await getAccount(connection, poolAccountA)).amount
         );
@@ -309,7 +316,7 @@ export default function Swaps() {
           inputAmount = (outputAmount * balanceB) / (balanceA - outputAmount);
         }
         const taxedInput =
-          inputAmount + parseInt(((inputAmount * fees) / 10000).toString());
+          inputAmount + parseInt(((inputAmount * fee) / 10000).toString());
         setTokenOneAmount(taxedInput);
       } catch (error) {
         setTokenOneAmount(0);
@@ -409,6 +416,7 @@ export default function Swaps() {
           const [poolAccount] = PublicKey.findProgramAddressSync(
             [
               Buffer.from("pool"),
+              new BN(fees).toArrayLike(Buffer, "le", 8),
               ammAccount.toBuffer(),
               tokenOne?.tokenMint > tokenTwo?.tokenMint
                 ? new PublicKey(tokenOne?.tokenMint).toBuffer()
@@ -422,7 +430,7 @@ export default function Swaps() {
           const accountData = await program.account.pool.fetch(poolAccount);
           const poolAccountA = accountData.poolAccountA;
           const poolAccountB = accountData.poolAccountB;
-          const fees = Number(accountData.fees);
+          const fee = Number(accountData.fees);
           const balanceA = Number(
             (await getAccount(connection, poolAccountA)).amount
           );
@@ -431,7 +439,7 @@ export default function Swaps() {
           );
           const taxedInput =
             tokenOneAmount -
-            parseInt(((tokenOneAmount * fees) / 10000).toString());
+            parseInt(((tokenOneAmount * fee) / 10000).toString());
           let outputAmount = 0;
           if (tokenOne.tokenMint < tokenTwo.tokenMint) {
             outputAmount = (taxedInput * balanceA) / (taxedInput + balanceB);
@@ -452,211 +460,208 @@ export default function Swaps() {
   return publicKey ? (
     <div className="  from-blue-50 to-indigo-50 flex items-center justify-center p-4 lg:pb-0 text-white w-[100%] md:w-[800px] mx-auto h-calc(100vh-135px) relative mb-[15px] lg:mb-0">
       <div className="w-full">
-        <div
-        className="bg-zinc-900 p-2 px-1 sm:p-4 sm:px-6 rounded-xl my-2 text-white mx-auto relative">
-        <Modal
-          open={isOpen}
-          footer={null}
-          onCancel={() => setIsOpen(false)}
-          title="Select a token"
-          width="90%"
-          className="max-w-[500px]"
-        >
-          <div className="modalContent overflow-x-scroll">
-            {tokenData?.map((token: TokenData, i: any) => {
-              return (
-                <div
-                  className="tokenChoice flex"
-                  key={i}
-                  onClick={() => modifyToken(i)}
-                >
-                  <div>
-                    <Image
-                      src="/token.webp"
-                      alt={token.name}
-                      className="tokenLogo"
-                      width={50}
-                      height={50}
-                      style={{ float: "left" }}
-                    />
-                  </div>
-                  <div
-                    className="tokenChoiceNames px-5"
-                    style={{ cursor: "pointer" }}
-                  >
-                    <div className="tokenName">
-                      {token.name} ({token.symbol})
-                    </div>
-                    <div className="tokenTicker">{token.tokenMint}</div>
-                    <br />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </Modal>
-
-        {!isLoading ? (
-          <div>
-            <div className="flex items-center justify-between py-4 px-5">
-              <b>Swap</b>
-              <Popover
-                content={settings}
-                title="Settings"
-                trigger="click"
-                placement="bottomRight"
-              >
-                <SettingOutlined className="cog" />
-              </Popover>
-            </div>
-            <div className="relative">
-              <div className="relative bg-[#212429] p-4 rounded-xl border-[4px] border-zinc-900 hover:bg-[#2f333b]">
-                <div className="flex justify-between mb-2">
-                  <p>Sell</p>
-                  <p>Balance: {userOneBalance}</p>
-                </div>
-                <div className="flex items-center  justify-between">
-                  <div>
-                    <input
-                      className=" w-full outline-none h-8 appearance-none text-3xl bg-transparent"
-                      type="number"
-                      onChange={handleInputAmount}
-                      value={tokenOneAmount}
-                      placeholder={"0.0"}
-                    />
-                  </div>
-                  <div
-                    className="flex p-2 pr-5 pl-3 bg-black rounded-[20px] cursor-pointer ">
-                    <div
-                      className="assetOne pb-1 w-max"
-                      onClick={() => openModal(1)}
-                    >
-                      <Image
-                        src="./token.webp"
-                        alt="assetOneLogo"
-                        className="assetLogo"
-                        width={30}
-                        height={30}
-                        style={{ float: "left", marginTop: "5px" }}
-                      />
-                      <b
-                        style={{
-                          fontSize: "20px",
-                          marginLeft: "10px",
-                        }}
-                      >
-                        {ellipsify(tokenOne?.tokenMint, 2)}
-                      </b>
-                      &nbsp;&nbsp;
-                      <DownOutlined />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div
-                className="switchButton bg-[#212429] footer-center absolute top-1/2 left-1/2 transform translate-y-[-50%] translate-x-[-50%] scale-[1.2] rotate-90 cursor-pointer w-[35px] h-[35px] m-auto flex justify-center fixed border-[2px] border-zinc-900"
-                onClick={switchTokens}
-              >
-                <SwapOutlined className="switchArrow" />
-              </div>
-
-              <div className="bg-[#212429] p-4 pb-6 rounded-xl border-[4px] border-zinc-900 hover:bg-[#2f333b]">
-                <div className="flex justify-between mb-2">
-                  <p>Buy</p>
-                  <p>Balance: {userTwoBalance}</p>
-                </div>
-                <div className="flex items-center  justify-between">
-                  <div>
-                    <input
-                      className=" w-full outline-none h-8 appearance-none text-3xl bg-transparent"
-                      type={"number"}
-                      onChange={handleOutputAmount}
-                      // disabled={true}
-                      value={tokenTwoAmount}
-                      placeholder={"0.0"}
-                    />
-                  </div>
-                  <div
-                    className="flex p-2 pr-5 pl-3 bg-black rounded-[20px] cursor-pointer"
-                    style={{
-                      backgroundColor: "black",
-                      borderRadius: "20px",
-                      cursor: "pointer",
-                      width: "auto",
-                    }}
-                  >
-                    <div
-                      className="assetOne pb-1 w-max"
-                      onClick={() => openModal(2)}
-                      style={{ marginTop: "-5px" }}
-                    >
-                      <Image
-                        src="./token.webp"
-                        alt="assetOneLogo"
-                        className="assetLogo"
-                        width={30}
-                        height={30}
-                        style={{ float: "left", marginTop: "5px" }}
-                      />
-                      <b
-                        style={{
-                          fontSize: "20px",
-                          marginLeft: "10px",
-                        }}
-                      >
-                        {ellipsify(tokenTwo?.tokenMint, 2)}
-                      </b>
-                      &nbsp;&nbsp;
-                      <DownOutlined />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-
-            <br />
-            <p>
-              <InfoCircleOutlined /> Select the correct fee tier & slippage
-              tolerance at swap settings.
-              <br />
-              <InfoCircleOutlined /> If the selected pool not exists the output
-              amount always shows `0`.
-            </p>
-
-            <div>
-              {swapExactInputMutation.isPending ||
-              swapExactOutputMutation.isPending ? (
-                <div className="my-5" style={{ marginLeft: "45%" }}>
-                  <span className="loading loading-spinner loading-lg"></span>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  className="flex btn btn-outline-primary my-5"
-                  style={{
-                    width: "100%",
-                    backgroundColor: "white",
-                    color: "black",
-                    fontSize: "20px",
-                  }}
-                  onClick={swapTokens}
-                >
-                  Swap Tokens
-                </button>
-              )}
-            </div>
-          </div>
-        ) : (
-          <div
-            className="flex flex-col items-center justify-center"
-            style={{ height: "470px" }}
+        <div className="bg-zinc-900 p-2 px-1 sm:p-4 sm:px-6 rounded-xl my-2 text-white mx-auto relative">
+          <Modal
+            open={isOpen}
+            footer={null}
+            onCancel={() => setIsOpen(false)}
+            title="Select a token"
+            width="90%"
+            className="max-w-[500px]"
           >
-            <span className="loading loading-spinner loading-lg"></span>
-          </div>
-        )}
-      </div>
+            <div className="modalContent overflow-x-scroll">
+              {tokenData?.map((token: TokenData, i: any) => {
+                return (
+                  <div
+                    className="tokenChoice flex"
+                    key={i}
+                    onClick={() => modifyToken(i)}
+                  >
+                    <div>
+                      <Image
+                        src="/token.webp"
+                        alt={token.name}
+                        className="tokenLogo"
+                        width={50}
+                        height={50}
+                        style={{ float: "left" }}
+                      />
+                    </div>
+                    <div
+                      className="tokenChoiceNames px-5"
+                      style={{ cursor: "pointer" }}
+                    >
+                      <div className="tokenName">
+                        {token.name} ({token.symbol})
+                      </div>
+                      <div className="tokenTicker">{token.tokenMint}</div>
+                      <br />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Modal>
+
+          {!isLoading ? (
+            <div>
+              <div className="flex items-center justify-between py-4 px-5">
+                <b>Swap</b>
+                <Popover
+                  content={settings}
+                  title="Settings"
+                  trigger="click"
+                  placement="bottomRight"
+                >
+                  <SettingOutlined className="cog" />
+                </Popover>
+              </div>
+              <div className="relative">
+                <div className="relative bg-[#212429] p-4 rounded-xl border-[4px] border-zinc-900 hover:bg-[#2f333b]">
+                  <div className="flex justify-between mb-2">
+                    <p>Sell</p>
+                    <p>Balance: {userOneBalance}</p>
+                  </div>
+                  <div className="flex items-center  justify-between">
+                    <div>
+                      <input
+                        className=" w-full outline-none h-8 appearance-none text-3xl bg-transparent"
+                        type="number"
+                        onChange={handleInputAmount}
+                        value={tokenOneAmount}
+                        placeholder={"0.0"}
+                      />
+                    </div>
+                    <div className="flex p-2 pr-5 pl-3 bg-black rounded-[20px] cursor-pointer ">
+                      <div
+                        className="assetOne pb-1 w-max"
+                        onClick={() => openModal(1)}
+                      >
+                        <Image
+                          src="./token.webp"
+                          alt="assetOneLogo"
+                          className="assetLogo"
+                          width={30}
+                          height={30}
+                          style={{ float: "left", marginTop: "5px" }}
+                        />
+                        <b
+                          style={{
+                            fontSize: "20px",
+                            marginLeft: "10px",
+                          }}
+                        >
+                          {ellipsify(tokenOne?.tokenMint, 2)}
+                        </b>
+                        &nbsp;&nbsp;
+                        <DownOutlined />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  className="switchButton bg-[#212429] footer-center absolute top-1/2 left-1/2 transform translate-y-[-50%] translate-x-[-50%] scale-[1.2] rotate-90 cursor-pointer w-[35px] h-[35px] m-auto flex justify-center fixed border-[2px] border-zinc-900"
+                  onClick={switchTokens}
+                >
+                  <SwapOutlined className="switchArrow" />
+                </div>
+
+                <div className="bg-[#212429] p-4 pb-6 rounded-xl border-[4px] border-zinc-900 hover:bg-[#2f333b]">
+                  <div className="flex justify-between mb-2">
+                    <p>Buy</p>
+                    <p>Balance: {userTwoBalance}</p>
+                  </div>
+                  <div className="flex items-center  justify-between">
+                    <div>
+                      <input
+                        className=" w-full outline-none h-8 appearance-none text-3xl bg-transparent"
+                        type={"number"}
+                        onChange={handleOutputAmount}
+                        // disabled={true}
+                        value={tokenTwoAmount}
+                        placeholder={"0.0"}
+                      />
+                    </div>
+                    <div
+                      className="flex p-2 pr-5 pl-3 bg-black rounded-[20px] cursor-pointer"
+                      style={{
+                        backgroundColor: "black",
+                        borderRadius: "20px",
+                        cursor: "pointer",
+                        width: "auto",
+                      }}
+                    >
+                      <div
+                        className="assetOne pb-1 w-max"
+                        onClick={() => openModal(2)}
+                        style={{ marginTop: "-5px" }}
+                      >
+                        <Image
+                          src="./token.webp"
+                          alt="assetOneLogo"
+                          className="assetLogo"
+                          width={30}
+                          height={30}
+                          style={{ float: "left", marginTop: "5px" }}
+                        />
+                        <b
+                          style={{
+                            fontSize: "20px",
+                            marginLeft: "10px",
+                          }}
+                        >
+                          {ellipsify(tokenTwo?.tokenMint, 2)}
+                        </b>
+                        &nbsp;&nbsp;
+                        <DownOutlined />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <br />
+              <p>
+                <InfoCircleOutlined /> Select the correct fee tier & slippage
+                tolerance at swap settings.
+                <br />
+                <InfoCircleOutlined /> If the selected pool not exists the
+                output amount always shows `0`.
+              </p>
+
+              <div>
+                {swapExactInputMutation.isPending ||
+                swapExactOutputMutation.isPending ? (
+                  <div className="my-5" style={{ marginLeft: "45%" }}>
+                    <span className="loading loading-spinner loading-lg"></span>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className="flex btn btn-outline-primary my-5"
+                    style={{
+                      width: "100%",
+                      backgroundColor: "white",
+                      color: "black",
+                      fontSize: "20px",
+                    }}
+                    onClick={swapTokens}
+                  >
+                    Swap Tokens
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div
+              className="flex flex-col items-center justify-center"
+              style={{ height: "470px" }}
+            >
+              <span className="loading loading-spinner loading-lg"></span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   ) : (

@@ -7,65 +7,72 @@ use crate::errors::*;
 use crate::state::*;
 use crate::utils::*;
 
-pub fn swap_exact_input(
-    ctx: Context<SwapExactInput>,
+pub fn swap_exact_output(
+    ctx: Context<SwapExactOutput>,
     fees: u64,
     swap_a: bool, // output should be mint_a
-    input_amount: u64,
-    min_output_amount: u64,
+    output_amount: u64,
+    max_input_amount: u64,
     delta_price_change: u64,
 ) -> Result<()> {
     // Prevent depositing assets the depositor does not own
-    require!(input_amount > 0, Errors::ZeroAmount);
+    require!(output_amount > 0, Errors::ZeroAmount);
     require!(fees == ctx.accounts.pool.fees, Errors::InvalidFee);
-    require!(
-        delta_price_change > 0 && delta_price_change <= 10000,
-        Errors::InvalidDeltaPrice
-    );
     if swap_a {
         require!(
-            ctx.accounts.trader_account_b.amount >= input_amount,
+            ctx.accounts.pool_account_a.amount > output_amount,
             Errors::InsufficientBalance
         );
     } else {
         require!(
-            ctx.accounts.trader_account_a.amount >= input_amount,
+            ctx.accounts.pool_account_b.amount > output_amount,
             Errors::InsufficientBalance
         );
     }
 
-    // Apply trading fee, used to compute the output
-    let fee_amount = (input_amount * fees) / PRECISION;
-    let taxed_input = input_amount - fee_amount;
-
     let pool_a = &ctx.accounts.pool_account_a;
     let pool_b = &ctx.accounts.pool_account_b;
-    let output_amount = if swap_a {
-        (taxed_input * pool_a.amount) / (pool_b.amount + taxed_input)
+
+    let input_amount = if swap_a {
+        (output_amount * pool_b.amount) / (pool_a.amount - output_amount)
     } else {
-        (taxed_input * pool_b.amount) / (pool_a.amount + taxed_input)
+        (output_amount * pool_a.amount) / (pool_b.amount - output_amount)
     };
 
-    require!(output_amount >= min_output_amount, Errors::OutputTooSmall);
+    let fee_amount = (input_amount * fees) / PRECISION;
+    let taxed_input = input_amount + fee_amount;
+
+    require!(taxed_input <= max_input_amount, Errors::OutputTooHigh);
+    require!(
+        taxed_input
+            < if swap_a {
+                ctx.accounts.trader_account_b.amount
+            } else {
+                ctx.accounts.trader_account_a.amount
+            },
+        Errors::InsufficientBalance
+    );
 
     if swap_a {
         require!(
-            delta_price_change >= get_price_percentage_changed(
-                pool_a.amount,
-                pool_b.amount,
-                pool_a.amount - output_amount,
-                pool_b.amount + input_amount,
-            ),
+            delta_price_change
+                >= get_price_percentage_changed(
+                    pool_a.amount,
+                    pool_b.amount,
+                    pool_a.amount - output_amount,
+                    pool_b.amount + taxed_input,
+                ),
             Errors::InvalidPriceChange,
         );
     } else {
         require!(
-            delta_price_change >= get_price_percentage_changed(
-                pool_a.amount,
-                pool_b.amount,
-                pool_a.amount + input_amount,
-                pool_b.amount - output_amount,
-            ),
+            delta_price_change
+                >= get_price_percentage_changed(
+                    pool_a.amount,
+                    pool_b.amount,
+                    pool_a.amount + taxed_input,
+                    pool_b.amount - output_amount,
+                ),
             Errors::InvalidPriceChange,
         );
     }
@@ -76,7 +83,7 @@ pub fn swap_exact_input(
             &ctx.accounts.pool_account_b,
             &ctx.accounts.trader,
             &ctx.accounts.token_program,
-            input_amount,
+            taxed_input,
         )?;
 
         let pool_key = ctx.accounts.pool.key();
@@ -103,7 +110,7 @@ pub fn swap_exact_input(
             &ctx.accounts.pool_account_a,
             &ctx.accounts.trader,
             &ctx.accounts.token_program,
-            input_amount,
+            taxed_input,
         )?;
 
         let pool_key = ctx.accounts.pool.key();
@@ -151,7 +158,7 @@ fn get_price_percentage_changed(
 
 #[derive(Accounts)]
 #[instruction(fees: u64)]
-pub struct SwapExactInput<'info> {
+pub struct SwapExactOutput<'info> {
     #[account(
         seeds = [b"amm"],
         bump = amm.amm_bump,
@@ -172,7 +179,7 @@ pub struct SwapExactInput<'info> {
         has_one = mint_a,
         has_one = mint_b,
         has_one = pool_account_a,
-        has_one = pool_account_b,
+        has_one = pool_account_b
     )]
     pub pool: Box<Account<'info, Pool>>,
 

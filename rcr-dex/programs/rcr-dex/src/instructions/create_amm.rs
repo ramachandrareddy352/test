@@ -3,7 +3,6 @@ use anchor_lang::prelude::*;
 
 pub fn create_amm(ctx: Context<CreateAmm>) -> Result<()> {
     let amm = &mut ctx.accounts.amm;
-    amm.admin = ctx.accounts.admin.key();
     amm.pool_count = 0;
     amm.amm_bump = ctx.bumps.amm;
     Ok(())
@@ -19,9 +18,6 @@ pub struct CreateAmm<'info> {
         bump,
     )]
     pub amm: Box<Account<'info, Amm>>,
-
-    /// check : Adding a admin to the AMM
-    pub admin: AccountInfo<'info>,
 
     #[account(mut)]
     pub payer: Signer<'info>,

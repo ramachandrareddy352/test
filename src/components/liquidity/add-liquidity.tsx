@@ -68,14 +68,15 @@ export function AddLiquidity() {
       return;
     }
     console.log("stage-1");
-    
+
     setPaymentStatus("Preparing transaction...");
-  
+
     try {
+      setShowQR(true);
       // Set minLiquidity (adjust this based on your logic; 101 as a placeholder)
       const minLiquidity = 101;
       const reference = new Keypair().publicKey;
-  
+
       const params = new URLSearchParams();
       params.append("reference", reference.toString());
       params.append("mintA", tokenOne.tokenMint);
@@ -84,27 +85,32 @@ export function AddLiquidity() {
       params.append("depositAmountB", tokenTwoAmount.toString());
       params.append("minLiquidity", minLiquidity.toString());
       params.append("fees", fees.toString());
-  
-      const apiUrl = `${location.protocol}//${location.host}/api/hello?${params.toString()}`;
+
+      const apiUrl = `${location.protocol}//${
+        location.host
+      }/api/deposit_liquidity?${params.toString()}`;
       // Encode the API URL into a QR code
       const urlFields: TransactionRequestURLFields = {
         link: new URL(apiUrl),
       };
       console.log(apiUrl);
-  
+
       const url = encodeURL(urlFields);
       const qr = createQR(url, 360, "white", "black");
       console.log(url);
-  
+
+      console.log("showing qr");
+      console.log(qrRef.current);
       if (qrRef.current) {
         qrRef.current.innerHTML = "";
         qr.append(qrRef.current);
-        setShowQR(true);
         console.log("appended");
+      } else {
+        return;
       }
       setPaymentStatus("Pending...");
       console.log("\n5. Find the transaction");
-  
+
       const signatureInfo: ConfirmedSignatureInfo = await new Promise(
         (resolve, reject) => {
           // Start checking every 2 seconds
@@ -127,7 +133,7 @@ export function AddLiquidity() {
               }
             }
           }, 2000);
-  
+
           // Set a timeout to stop checking after 2 minutes
           const timeoutId = setTimeout(() => {
             clearInterval(intervalId);
@@ -137,7 +143,7 @@ export function AddLiquidity() {
           }, 2 * 60 * 1000); // 2 minutes timeout
         }
       );
-  
+
       setShowQR(false);
       let { signature } = signatureInfo;
       setPaymentStatus("Confirmed");
@@ -160,7 +166,7 @@ export function AddLiquidity() {
       setShowQR(false);
     }
   };
-  
+
   // ----------- End Solana Pay code -----------
 
   const addLiquidity = async () => {

@@ -49,8 +49,7 @@ export function CreatePools() {
 
   return (
     <div className="container  py-3 text-white">
-      <div
-        className="bg-zinc-900 p-2 px-1 sm:p-4 sm:px-6 rounded-xl my-2 text-white mx-auto">
+      <div className="bg-zinc-900 p-2 px-1 sm:p-4 sm:px-6 rounded-xl my-2 text-white mx-auto">
         <div className="flex items-center gap-3 mb-6">
           <h1 className="text-2xl font-bold">Create Liquidity Pool</h1>
         </div>
