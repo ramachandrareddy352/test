@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 import { clusterApiUrl, PublicKey,Connection, TransactionMessage, VersionedTransaction, SystemProgram, Transaction, Keypair, TransactionInstruction } from "@solana/web3.js";
 import { NextRequest, NextResponse } from "next/server";
 import { sha256 } from "js-sha256";
@@ -5,6 +6,8 @@ import BN from "bn.js";
 import { getAssociatedTokenAddress } from "@solana/spl-token";
 import {getDexProgram} from "../../../../anchor/src";
 import { useAnchorProvider } from "../../../components/solana/solana-provider";
+import { AnchorProvider } from "@coral-xyz/anchor";
+import { AnchorWallet, useWallet } from "@solana/wallet-adapter-react";
 // "../../solana/solana-provider";
 // type GetData = {
 //   label: string;
@@ -119,8 +122,11 @@ export async function POST(request: NextRequest) {
       false // useEntireAmount (hardcoded to false)
     );
 
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const provider = useAnchorProvider();
+    const connection = new Connection(ENDPOINT);
+    const wallet = useWallet();
+    const provider = new AnchorProvider(connection, wallet as AnchorWallet, {
+        commitment: "confirmed",
+      });
     const program = getDexProgram(provider);
 
     const depositIX = await program.methods.depositLiquidity(depositAmountABN, depositAmountBBN, minLiquidityBN, feesBN, true).accounts({
@@ -141,11 +147,11 @@ export async function POST(request: NextRequest) {
       systemProgram: systemProgram
     }).instruction();
 
-    // depositIX.keys.push({
-    //   pubkey: reference,
-    //   isSigner: false,
-    //   isWritable: false,
-    // });
+    depositIX.keys.push({
+      pubkey: reference,
+      isSigner: false,
+      isWritable: false,
+    });
 
     // const depositIX = new TransactionInstruction({
     //   programId: new PublicKey("DX4TnoHCQoCCLC5pg7K49CMb9maMA3TMfHXiPBD55G1w"),
@@ -178,7 +184,6 @@ export async function POST(request: NextRequest) {
     //   data: data, 
     // });
 
-    const connection = new Connection(ENDPOINT);
     const transaction = new Transaction().add(depositIX);
     const { blockhash } = await connection.getLatestBlockhash();
     transaction.recentBlockhash = blockhash;
