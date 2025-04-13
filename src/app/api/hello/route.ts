@@ -12,7 +12,7 @@ import BN from "bn.js";
 import { getAssociatedTokenAddress } from "@solana/spl-token";
 import { getDexProgram } from "../../../../anchor/src";
 import { AnchorProvider, Wallet } from "@coral-xyz/anchor";
-import MockWallet from "./mockWallet";
+import MockWallet from "./MockWallet";
 
 // Remove any client-only imports (like useWallet or React hooks)
 
