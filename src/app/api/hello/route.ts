@@ -162,11 +162,11 @@ export async function POST(request: NextRequest) {
       .instruction();
 
     // Optionally add the reference account if needed:
-    depositIX.keys.push({
-      pubkey: reference,
-      isSigner: false,
-      isWritable: false,
-    });
+    // depositIX.keys.push({
+    //   pubkey: reference,
+    //   isSigner: false,
+    //   isWritable: false,
+    // });
 
     // Build the transaction
     const transaction = new Transaction().add(depositIX);
