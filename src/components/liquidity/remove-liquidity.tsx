@@ -76,7 +76,6 @@ export function RemoveLiquidity() {
       const tokenTwoAmount = 1;
 
       const params = new URLSearchParams();
-      params.append("reference", reference.toString());
       params.append("mintA", tokenOne.tokenMint);
       params.append("mintB", tokenTwo.tokenMint);
       params.append("minAmountA", tokenOneAmount.toString());
@@ -86,6 +85,7 @@ export function RemoveLiquidity() {
         convertToBaseUnits(liquidityAmount, 6).toString()
       );
       params.append("fees", fees.toString());
+      params.append("reference", reference.toString());
 
       const apiUrl = `${location.protocol}//${
         location.host

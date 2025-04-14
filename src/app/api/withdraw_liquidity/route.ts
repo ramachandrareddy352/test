@@ -100,6 +100,17 @@ export async function POST(request: NextRequest) {
       [Buffer.from("pool-account-b"), pool.toBuffer(), mintB.toBuffer()],
       PROGRAM_ID
     );
+    console.log(
+      amm +
+        "---" +
+        pool +
+        "---" +
+        mintLiquidity +
+        "---" +
+        poolAccountA +
+        "---" +
+        poolAccountB
+    );
 
     // User associated token accounts
     const depositorAccountA = await getAssociatedTokenAddress(mintA, depositor);
@@ -131,7 +142,7 @@ export async function POST(request: NextRequest) {
 
     // Build the deposit liquidity instruction using Anchor's methods
     const depositIX = await program.methods
-      .withdrawLiquidity(feesBN, minAmountABN, minAmountBBN, liquidityAmountBN)
+      .withdrawLiquidity(feesBN, liquidityAmountBN, minAmountABN, minAmountBBN)
       .accounts({
         // @ts-ignore
         amm: amm,
