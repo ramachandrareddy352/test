@@ -248,8 +248,8 @@ export function CreatePools() {
             </div>
           </fieldset>
           <p>
-            <InfoCircleOutlined /> No two tokens can create multiple pools even
-            having multiple fees.
+            <InfoCircleOutlined /> User can create upto 3 pools with same two
+            tokens.
           </p>
 
           {createPoolMutation.isPending ? (

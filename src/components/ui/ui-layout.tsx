@@ -93,13 +93,13 @@ export function UiLayout({
             <ClusterUiSelect />
           </div>
         </div>
-      </div> */} 
+      </div> */}
 
       <nav className="bg-black text-white relative w-full shadow-md z-50">
         <div className="container mx-auto flex justify-between items-center p-4">
           {/* Logo */}
           <Link href="/" className="text-2xl font-bold mx-5 w-max lg:w-4/12 ">
-            RCR-DEX
+            SOLANA-PAY-DEX
           </Link>
 
           {/* Mobile Menu Icon */}
@@ -120,24 +120,24 @@ export function UiLayout({
           {/* Navbar Links */}
           <ul className={`lg:flex space-x-6 hidden justify-between w-8/12`}>
             <div className="flex items-center">
-            {links.map(({ label, path }) => (
-              <li key={path} className="mx-3">
-                <Link
-                  href={path}
-                  className={`${
-                    pathname.startsWith(path) ? "text-yellow-500" : ""
-                  } hover:text-yellow-400 transition`}
-                >
-                  {label}
-                </Link>
-              </li>
-            ))}
+              {links.map(({ label, path }) => (
+                <li key={path} className="mx-3">
+                  <Link
+                    href={path}
+                    className={`${
+                      pathname.startsWith(path) ? "text-yellow-500" : ""
+                    } hover:text-yellow-400 transition`}
+                  >
+                    {label}
+                  </Link>
+                </li>
+              ))}
             </div>
             <div className="flex">
-            <WalletButton  className="mx-3" />
-            <ClusterUiSelect />
+              <WalletButton className="mx-3" />
+              <ClusterUiSelect />
             </div>
-            </ul>
+          </ul>
         </div>
 
         {/* Mobile Menu */}
@@ -161,14 +161,12 @@ export function UiLayout({
             </div>
           </div>
         )}
-      </nav>     
-      
-      <div
-        className="bg-black text-white overflow-y-scroll scrollbar-hide relative w-[100%] min-h-[calc(100vh-137px)]"
-      >
+      </nav>
+
+      <div className="bg-black text-white overflow-y-scroll scrollbar-hide relative w-[100%] min-h-[calc(100vh-137px)]">
         <ClusterChecker>
-        <AccountChecker />
-      </ClusterChecker>
+          <AccountChecker />
+        </ClusterChecker>
         <Suspense
           fallback={
             <div className="text-center my-32">
@@ -185,7 +183,7 @@ export function UiLayout({
           <p>
             <a
               className="link hover:text-white"
-              href="https://github.com/ramachandrareddy352/"
+              href="https://github.com/ramachandrareddy352/test"
               target="_blank"
               rel="noopener noreferrer"
               style={{ textDecoration: "none" }}
@@ -209,7 +207,7 @@ export function UiLayout({
           <p>
             <a
               className="link hover:text-white"
-              href="https://www.linkedin.com/in/ramachandratavanam/"
+              href="https://test-tau-five-61.vercel.app/"
               target="_blank"
               rel="noopener noreferrer"
               style={{ textDecoration: "none" }}
@@ -221,7 +219,7 @@ export function UiLayout({
           <p>
             <a
               className="link hover:text-white"
-              href="https://x.com/TavanamRama"
+              href="https://test-tau-five-61.vercel.app/"
               target="_blank"
               rel="noopener noreferrer"
               style={{ textDecoration: "none" }}
@@ -233,7 +231,7 @@ export function UiLayout({
           <p>
             <a
               className="link hover:text-white"
-              href="https://ramachandrareddy.netlify.app/"
+              href="https://test-tau-five-61.vercel.app/"
               target="_blank"
               rel="noopener noreferrer"
               style={{ textDecoration: "none" }}
