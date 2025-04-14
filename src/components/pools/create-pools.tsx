@@ -29,19 +29,25 @@ export function CreatePools() {
       message.error("Enter valid length of token mints");
       return;
     } else {
-      await createPoolMutation
-        .mutateAsync({
-          mintA: formData.tokenA,
-          mintB: formData.tokenB,
-          fees: formData.fee,
-        })
-        .then((data) => {
-          console.log("Pool created successfully!");
-          console.log("Response data:", data); // Log the returned data
-          formData.tokenA = "";
-          formData.tokenB = "";
-          formData.fee = 30;
-        });
+      try {
+        console.log(formData);
+        await createPoolMutation
+          .mutateAsync({
+            mintA: formData.tokenA,
+            mintB: formData.tokenB,
+            fees: formData.fee,
+          })
+          .then((data) => {
+            console.log("Pool created successfully!");
+            console.log("Response data:", data); // Log the returned data
+            formData.tokenA = "";
+            formData.tokenB = "";
+            formData.fee = 30;
+          });
+      } catch (error) {
+        message.error("failed to create pool");
+        console.log(error);
+      }
     }
   };
 
@@ -118,7 +124,7 @@ export function CreatePools() {
               clearTimeout(timeoutId);
               console.log("\n 🖌  Signature found: ", result.signature);
               resolve(result);
-                            message.success("Pool created successfully")
+              message.success("Pool created successfully");
             } catch (error: any) {
               if (!(error instanceof FindReferenceError)) {
                 clearInterval(intervalId);

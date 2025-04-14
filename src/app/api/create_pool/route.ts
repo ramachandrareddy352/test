@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     }
 
     const reference = new PublicKey(referenceParam);
-    const depositor = new PublicKey(account);
+    const payer = new PublicKey(account);
     const mintA = new PublicKey(mintAPubkey);
     const mintB = new PublicKey(mintBPubkey);
     const feesBN = new BN(fees);
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
         mintB: mintB,
         poolAccountA: poolAccountA,
         poolAccountB: poolAccountB,
-        payer: depositor,
+        payer: payer,
         tokenProgram: tokenProgram,
         associatedTokenProgram: associatedTokenProgram,
         systemProgram: systemProgram,
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
     const transaction = new Transaction().add(depositIX);
     const { blockhash } = await connection.getLatestBlockhash();
     transaction.recentBlockhash = blockhash;
-    transaction.feePayer = depositor;
+    transaction.feePayer = payer;
     console.log("Transaction:", transaction);
 
     const serializedTransaction = transaction.serialize({
@@ -148,7 +148,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         transaction: base64Transaction,
-        message: "Deposit liquidity transaction created successfully.",
+        message: "Pool created successfully.",
       },
       { status: 200 }
     );
