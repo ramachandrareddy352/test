@@ -374,8 +374,18 @@ export default function Swaps() {
         const minOutputAmount = 100;
 
         const params = new URLSearchParams();
-        params.append("mintA", tokenOne.tokenMint);
-        params.append("mintB", tokenTwo.tokenMint);
+        params.append(
+          "mintA",
+          tokenOne?.tokenMint > tokenTwo?.tokenMint
+            ? tokenOne.tokenMint
+            : tokenTwo?.tokenMint
+        );
+        params.append(
+          "mintB",
+          tokenOne?.tokenMint > tokenTwo?.tokenMint
+            ? tokenTwo.tokenMint
+            : tokenOne?.tokenMint
+        );
         params.append(
           "swapA",
           tokenOne?.tokenMint < tokenTwo?.tokenMint ? "true" : "false"
@@ -395,8 +405,18 @@ export default function Swaps() {
       } else {
         const maxInputAmount = 2 ** 53;
         const params = new URLSearchParams();
-        params.append("mintA", tokenOne.tokenMint);
-        params.append("mintB", tokenTwo.tokenMint);
+        params.append(
+          "mintA",
+          tokenOne?.tokenMint > tokenTwo?.tokenMint
+            ? tokenOne.tokenMint
+            : tokenTwo?.tokenMint
+        );
+        params.append(
+          "mintB",
+          tokenOne?.tokenMint > tokenTwo?.tokenMint
+            ? tokenTwo.tokenMint
+            : tokenOne?.tokenMint
+        );
         params.append(
           "swapA",
           tokenOne?.tokenMint < tokenTwo?.tokenMint ? "true" : "false"
