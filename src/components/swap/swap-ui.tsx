@@ -1,13 +1,17 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { WalletButton } from "../solana/solana-provider";
 import { ellipsify } from "../ui/ui-layout";
 import { useDexProgram } from "./swap-mutation";
 import { Metaplex } from "@metaplex-foundation/js";
-import { PublicKey } from "@solana/web3.js";
-import { getAssociatedTokenAddress, getAccount } from "@solana/spl-token";
+import { ConfirmedSignatureInfo, Keypair, PublicKey } from "@solana/web3.js";
+import {
+  getAssociatedTokenAddress,
+  getAccount,
+  getMint,
+} from "@solana/spl-token";
 import { Popover, Radio, Modal, message, Image } from "antd";
 import {
   SwapOutlined,
@@ -16,11 +20,27 @@ import {
   InfoCircleOutlined,
 } from "@ant-design/icons";
 import BN from "bn.js";
+import {
+  createQR,
+  encodeURL,
+  findReference,
+  FindReferenceError,
+  TransactionRequestURLFields,
+} from "@solana/pay";
 
 type TokenData = {
   tokenMint: string;
   symbol: string;
   name: string;
+  decimals: number;
+};
+
+const convertToBaseUnits = (amount: number, decimals: number): number => {
+  return amount * 10 ** decimals;
+};
+
+const convertToForamlUnits = (amount: number, decimals: number): number => {
+  return amount / 10 ** decimals;
 };
 
 export default function Swaps() {
@@ -153,7 +173,7 @@ export default function Swaps() {
               ? tokenTwo.tokenMint
               : tokenOne?.tokenMint,
           fees: fees,
-          inputAmount: tokenOneAmount,
+          inputAmount: convertToBaseUnits(tokenOneAmount, tokenOne.decimals),
           deltaPriceChange: rangeValue,
           swapA: tokenOne?.tokenMint < tokenTwo?.tokenMint,
         });
@@ -188,7 +208,7 @@ export default function Swaps() {
               ? tokenTwo.tokenMint
               : tokenOne?.tokenMint,
           fees: fees,
-          outputAmount: tokenTwoAmount,
+          outputAmount: convertToBaseUnits(tokenTwoAmount, tokenTwo.decimals),
           deltaPriceChange: rangeValue,
           swapA: tokenOne?.tokenMint < tokenTwo?.tokenMint,
         });
@@ -218,14 +238,12 @@ export default function Swaps() {
 
   const handleInputAmount = async (event: any) => {
     setExactInput(true);
-    const inputAmount = event.target.value;
+    let inputAmount = event.target.value;
     setTokenOneAmount(inputAmount);
-    console.log(inputAmount);
-    console.log(tokenOne);
-    console.log(tokenTwo);
 
     if (inputAmount !== "0" && inputAmount !== "" && tokenOne && tokenTwo) {
       try {
+        inputAmount = convertToBaseUnits(event.target.value, tokenOne.decimals);
         const [ammAccount] = PublicKey.findProgramAddressSync(
           [Buffer.from("amm")],
           program.programId
@@ -256,7 +274,7 @@ export default function Swaps() {
           (await getAccount(connection, poolAccountB)).amount
         );
         const taxedInput =
-          inputAmount - parseInt(((inputAmount * fee) / 10000).toString());
+          inputAmount - parseFloat(((inputAmount * fee) / 10000).toString());
         let outputAmount = 0;
         if (tokenOne.tokenMint < tokenTwo.tokenMint) {
           outputAmount = (taxedInput * balanceA) / (taxedInput + balanceB);
@@ -264,6 +282,7 @@ export default function Swaps() {
           outputAmount = (taxedInput * balanceB) / (taxedInput + balanceA);
         }
         console.log(outputAmount);
+        outputAmount = convertToForamlUnits(outputAmount, tokenTwo.decimals);
         setTokenTwoAmount(outputAmount);
       } catch (error) {
         setTokenTwoAmount(0);
@@ -275,10 +294,11 @@ export default function Swaps() {
 
   const handleOutputAmount = async (event: any) => {
     setExactInput(false);
-    const outputAmount = event.target.value;
+    let outputAmount = event.target.value;
     setTokenTwoAmount(outputAmount);
 
     if (outputAmount !== "0" && outputAmount !== "" && tokenOne && tokenTwo) {
+      outputAmount = convertToBaseUnits(event.target.value, tokenTwo.decimals);
       try {
         const [ammAccount] = PublicKey.findProgramAddressSync(
           [Buffer.from("amm")],
@@ -315,8 +335,9 @@ export default function Swaps() {
         } else {
           inputAmount = (outputAmount * balanceB) / (balanceA - outputAmount);
         }
-        const taxedInput =
-          inputAmount + parseInt(((inputAmount * fee) / 10000).toString());
+        let taxedInput =
+          inputAmount + parseFloat(((inputAmount * fee) / 10000).toString());
+        taxedInput = convertToBaseUnits(taxedInput, tokenOne.decimals);
         setTokenOneAmount(taxedInput);
       } catch (error) {
         setTokenOneAmount(0);
@@ -325,6 +346,153 @@ export default function Swaps() {
       setTokenOneAmount(0);
     }
   };
+
+  // ----------- Solana Pay State -----------
+  const qrRef = useRef<HTMLDivElement>(null);
+  const [paymentStatus, setPaymentStatus] = useState("");
+  const [showQR, setShowQR] = useState(false);
+  // const [reference, setReference] = useState();
+
+  const startPaymentTransfer = async () => {
+    console.log("stage-1");
+
+    if (!tokenOne || !tokenTwo) {
+      message.error("Please select both tokens and enter their amounts");
+      return;
+    }
+    console.log("stage-1");
+
+    setPaymentStatus("Preparing transaction...");
+    let apiUrl;
+
+    try {
+      setShowQR(true);
+      // Set minLiquidity (adjust this based on your logic; 101 as a placeholder)
+      const reference = new Keypair().publicKey;
+
+      if (exactInput) {
+        const minOutputAmount = 100;
+
+        const params = new URLSearchParams();
+        params.append("mintA", tokenOne.tokenMint);
+        params.append("mintB", tokenTwo.tokenMint);
+        params.append(
+          "swapA",
+          tokenOne?.tokenMint < tokenTwo?.tokenMint ? "true" : "false"
+        );
+        params.append(
+          "inputAmount",
+          convertToBaseUnits(tokenOneAmount, tokenOne.decimals).toString()
+        );
+        params.append("minOutputAmount", minOutputAmount.toString());
+        params.append("deltaPriceChange", rangeValue.toString());
+        params.append("fees", fees.toString());
+        params.append("reference", reference.toString());
+
+        apiUrl = `${location.protocol}//${
+          location.host
+        }/api/swap_exact_input?${params.toString()}`;
+      } else {
+        const maxInputAmount = 2 ^ 53;
+        const params = new URLSearchParams();
+        params.append("mintA", tokenOne.tokenMint);
+        params.append("mintB", tokenTwo.tokenMint);
+        params.append(
+          "swapA",
+          tokenOne?.tokenMint < tokenTwo?.tokenMint ? "true" : "false"
+        );
+        params.append(
+          "outputAmount",
+          convertToBaseUnits(tokenTwoAmount, tokenTwo.decimals).toString()
+        );
+        params.append("maxInputAmount", maxInputAmount.toString());
+        params.append("deltaPriceChange", rangeValue.toString());
+        params.append("fees", fees.toString());
+        params.append("reference", reference.toString());
+
+        apiUrl = `${location.protocol}//${
+          location.host
+        }/api/swap_exact_output?${params.toString()}`;
+      }
+      // Encode the API URL into a QR code
+      const urlFields: TransactionRequestURLFields = {
+        link: new URL(apiUrl),
+      };
+      console.log(apiUrl);
+
+      const url = encodeURL(urlFields);
+      const qr = createQR(url, 250, "white", "black");
+      console.log(url);
+
+      console.log("showing qr");
+      console.log(qrRef.current);
+      if (qrRef.current) {
+        qrRef.current.innerHTML = "";
+        qr.append(qrRef.current);
+        console.log("appended");
+      } else {
+        return;
+      }
+      setPaymentStatus("Pending...");
+      console.log("\n5. Find the transaction");
+
+      const signatureInfo: ConfirmedSignatureInfo = await new Promise(
+        (resolve, reject) => {
+          // Start checking every 2 seconds
+          const intervalId = setInterval(async () => {
+            console.count("Checking for transaction...");
+            try {
+              const result = await findReference(connection, reference, {
+                finality: "confirmed",
+              });
+              // Transaction found, stop further checks.
+              clearInterval(intervalId);
+              clearTimeout(timeoutId);
+              console.log("\n 🖌  Signature found: ", result.signature);
+              resolve(result);
+            } catch (error: any) {
+              if (!(error instanceof FindReferenceError)) {
+                clearInterval(intervalId);
+                clearTimeout(timeoutId);
+                reject(error);
+              }
+            }
+          }, 2000);
+
+          // Set a timeout to stop checking after 2 minutes
+          const timeoutId = setTimeout(() => {
+            clearInterval(intervalId);
+            console.log("❌ Payment timeout reached.");
+            setPaymentStatus("Timeout Reached");
+            reject(new Error("Payment timeout reached"));
+          }, 2 * 60 * 1000); // 2 minutes timeout
+        }
+      );
+
+      setShowQR(false);
+      let { signature } = signatureInfo;
+      setPaymentStatus("Confirmed");
+      const transaction = await connection.getTransaction(signature, {
+        commitment: "confirmed",
+        maxSupportedTransactionVersion: 0,
+      });
+      console.log(transaction);
+      if (!transaction || !transaction.meta) {
+        console.error("Transaction not found or incomplete");
+        return false;
+      }
+      if (transaction.meta.err) {
+        console.error("Transaction failed with error:", transaction.meta.err);
+        return false;
+      }
+    } catch (error: any) {
+      console.error("Error starting payment transfer:", error);
+      message.error(error.message);
+      setShowQR(false);
+    }
+  };
+
+  // ----------- End Solana Pay code -----------
 
   useEffect(() => {
     const fetchData = async () => {
@@ -354,11 +522,14 @@ export default function Swaps() {
                 symbolA = tokenA.symbol;
                 nameA = tokenA.name;
               }
+              const mintInfoA = await getMint(connection, new PublicKey(mintA));
+
               uniqueMints.add(mintA);
               data.push({
                 tokenMint: mintA,
                 symbol: symbolA,
                 name: nameA,
+                decimals: mintInfoA.decimals,
               });
               console.log(data);
             }
@@ -380,11 +551,14 @@ export default function Swaps() {
                   .findByMint({ mintAddress: pool.account.mintB });
                 symbolB = tokenB.symbol;
               }
+              const mintInfoB = await getMint(connection, new PublicKey(mintB));
+
               uniqueMints.add(mintB);
               data.push({
                 tokenMint: mintB,
                 symbol: symbolB,
                 name: nameB,
+                decimals: mintInfoB.decimals,
               });
               console.log(data);
             }
@@ -407,6 +581,10 @@ export default function Swaps() {
       setExactInput(!exactInput);
       setTokenOneAmount(tokenOneAmount);
       if (tokenOneAmount !== 0 && tokenOne && tokenTwo) {
+        let wrapTokenOneAmount = convertToBaseUnits(
+          tokenOneAmount,
+          tokenOne.decimals
+        );
         try {
           const [ammAccount] = PublicKey.findProgramAddressSync(
             [Buffer.from("amm")],
@@ -438,14 +616,15 @@ export default function Swaps() {
             (await getAccount(connection, poolAccountB)).amount
           );
           const taxedInput =
-            tokenOneAmount -
-            parseInt(((tokenOneAmount * fee) / 10000).toString());
+            wrapTokenOneAmount -
+            parseFloat(((wrapTokenOneAmount * fee) / 10000).toString());
           let outputAmount = 0;
           if (tokenOne.tokenMint < tokenTwo.tokenMint) {
             outputAmount = (taxedInput * balanceA) / (taxedInput + balanceB);
           } else {
             outputAmount = (taxedInput * balanceB) / (taxedInput + balanceA);
           }
+          outputAmount = convertToForamlUnits(outputAmount, tokenTwo.decimals);
           setTokenTwoAmount(outputAmount);
         } catch (error) {
           setTokenTwoAmount(0);
@@ -455,7 +634,7 @@ export default function Swaps() {
       }
     };
     fetchOutput();
-  }, [tokenOne, tokenTwo]);
+  }, [tokenOne, tokenTwo, fees]);
 
   return publicKey ? (
     <div className="  from-blue-50 to-indigo-50 flex items-center justify-center p-4 lg:pb-0 text-white w-[100%] md:w-[800px] mx-auto h-calc(100vh-135px) relative mb-[15px] lg:mb-0">
@@ -637,19 +816,52 @@ export default function Swaps() {
                     <span className="loading loading-spinner loading-lg"></span>
                   </div>
                 ) : (
-                  <button
-                    type="button"
-                    className="flex btn btn-outline-primary my-5"
-                    style={{
-                      width: "100%",
-                      backgroundColor: "white",
-                      color: "black",
-                      fontSize: "20px",
-                    }}
-                    onClick={swapTokens}
-                  >
-                    Swap Tokens
-                  </button>
+                  <div>
+                    <button
+                      type="button"
+                      className="flex btn btn-outline-primary my-5"
+                      style={{
+                        width: "100%",
+                        backgroundColor: "white",
+                        color: "black",
+                        fontSize: "20px",
+                      }}
+                      onClick={swapTokens}
+                    >
+                      Swap Tokens
+                    </button>
+                    <button
+                      type="button"
+                      className="flex btn btn-outline-primary my-5"
+                      style={{
+                        width: "100%",
+                        backgroundColor: "white",
+                        color: "black",
+                        fontSize: "20px",
+                      }}
+                      onClick={startPaymentTransfer}
+                    >
+                      Use Scanner (Solana Pay)
+                    </button>
+                    <Modal
+                      open={showQR}
+                      footer={null}
+                      onCancel={() => setShowQR(false)}
+                      title="Scan QR Code to Confirm Withdraw"
+                      width="90%"
+                      className="max-w-[300px]"
+                    >
+                      <div
+                        className="modalContent"
+                        style={{ textAlign: "center" }}
+                      >
+                        <div ref={qrRef} />
+                        <p>
+                          Status: <strong>{paymentStatus}</strong>
+                        </p>
+                      </div>
+                    </Modal>
+                  </div>
                 )}
               </div>
             </div>

@@ -44,9 +44,10 @@ export async function POST(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const mintAPubkey = searchParams.get("mintA");
     const mintBPubkey = searchParams.get("mintB");
-    const depositAmountA = searchParams.get("depositAmountA");
-    const depositAmountB = searchParams.get("depositAmountB");
-    const minLiquidity = searchParams.get("minLiquidity");
+    const swapA = searchParams.get("swapA");
+    const inputAmount = searchParams.get("inputAmount");
+    const minOutputAmount = searchParams.get("minOutputAmount");
+    const deltaPriceChange = searchParams.get("deltaPriceChange");
     const fees = searchParams.get("fees");
     const referenceParam = searchParams.get("reference");
 
@@ -54,9 +55,9 @@ export async function POST(request: NextRequest) {
       !account ||
       !mintAPubkey ||
       !mintBPubkey ||
-      !depositAmountA ||
-      !depositAmountB ||
-      !minLiquidity ||
+      !inputAmount ||
+      !minOutputAmount ||
+      !deltaPriceChange ||
       !fees ||
       !referenceParam
     ) {
@@ -68,9 +69,9 @@ export async function POST(request: NextRequest) {
     const mintA = new PublicKey(mintAPubkey);
     const mintB = new PublicKey(mintBPubkey);
 
-    const depositAmountABN = new BN(depositAmountA);
-    const depositAmountBBN = new BN(depositAmountB);
-    const minLiquidityBN = new BN(minLiquidity);
+    const inputAmountBN = new BN(inputAmount);
+    const minOutputAmountBN = new BN(minOutputAmount);
+    const deltaPriceChangeBN = new BN(deltaPriceChange);
     const feesBN = new BN(fees);
 
     // Derive PDAs
@@ -88,10 +89,6 @@ export async function POST(request: NextRequest) {
       ],
       PROGRAM_ID
     );
-    const [mintLiquidity] = PublicKey.findProgramAddressSync(
-      [Buffer.from("liquidity"), pool.toBuffer()],
-      PROGRAM_ID
-    );
     const [poolAccountA] = PublicKey.findProgramAddressSync(
       [Buffer.from("pool-account-a"), pool.toBuffer(), mintA.toBuffer()],
       PROGRAM_ID
@@ -104,10 +101,6 @@ export async function POST(request: NextRequest) {
     // User associated token accounts
     const depositorAccountA = await getAssociatedTokenAddress(mintA, depositor);
     const depositorAccountB = await getAssociatedTokenAddress(mintB, depositor);
-    const depositorAccountLiquidity = await getAssociatedTokenAddress(
-      mintLiquidity,
-      depositor
-    );
 
     const tokenProgram = new PublicKey(
       "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
@@ -131,25 +124,24 @@ export async function POST(request: NextRequest) {
 
     // Build the deposit liquidity instruction using Anchor's methods
     const depositIX = await program.methods
-      .depositLiquidity(
+      .swapExactInput(
         feesBN,
-        depositAmountABN,
-        depositAmountBBN,
-        minLiquidityBN
+        swapA === "true" ? true : false,
+        inputAmountBN,
+        minOutputAmountBN,
+        deltaPriceChangeBN
       )
       .accounts({
         // @ts-ignore
         amm: amm,
         pool: pool,
-        depositor: depositor,
-        mintLiquidity: mintLiquidity,
+        trader: depositor,
         mintA: mintA,
         mintB: mintB,
         poolAccountA: poolAccountA,
         poolAccountB: poolAccountB,
-        depositorAccountLiquidity: depositorAccountLiquidity,
-        depositorAccountA: depositorAccountA,
-        depositorAccountB: depositorAccountB,
+        traderAccountA: depositorAccountA,
+        traderAccountB: depositorAccountB,
         tokenProgram: tokenProgram,
         associatedTokenProgram: associatedTokenProgram,
         systemProgram: systemProgram,

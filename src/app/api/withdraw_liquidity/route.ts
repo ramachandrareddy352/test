@@ -44,9 +44,9 @@ export async function POST(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const mintAPubkey = searchParams.get("mintA");
     const mintBPubkey = searchParams.get("mintB");
-    const depositAmountA = searchParams.get("depositAmountA");
-    const depositAmountB = searchParams.get("depositAmountB");
-    const minLiquidity = searchParams.get("minLiquidity");
+    const minAmountA = searchParams.get("minAmountA");
+    const minAmountB = searchParams.get("minAmountB");
+    const liquidityAmount = searchParams.get("liquidityAmount");
     const fees = searchParams.get("fees");
     const referenceParam = searchParams.get("reference");
 
@@ -54,9 +54,9 @@ export async function POST(request: NextRequest) {
       !account ||
       !mintAPubkey ||
       !mintBPubkey ||
-      !depositAmountA ||
-      !depositAmountB ||
-      !minLiquidity ||
+      !minAmountA ||
+      !minAmountB ||
+      !liquidityAmount ||
       !fees ||
       !referenceParam
     ) {
@@ -68,9 +68,9 @@ export async function POST(request: NextRequest) {
     const mintA = new PublicKey(mintAPubkey);
     const mintB = new PublicKey(mintBPubkey);
 
-    const depositAmountABN = new BN(depositAmountA);
-    const depositAmountBBN = new BN(depositAmountB);
-    const minLiquidityBN = new BN(minLiquidity);
+    const minAmountABN = new BN(minAmountA);
+    const minAmountBBN = new BN(minAmountB);
+    const liquidityAmountBN = new BN(liquidityAmount);
     const feesBN = new BN(fees);
 
     // Derive PDAs
@@ -131,12 +131,7 @@ export async function POST(request: NextRequest) {
 
     // Build the deposit liquidity instruction using Anchor's methods
     const depositIX = await program.methods
-      .depositLiquidity(
-        feesBN,
-        depositAmountABN,
-        depositAmountBBN,
-        minLiquidityBN
-      )
+      .withdrawLiquidity(feesBN, minAmountABN, minAmountBBN, liquidityAmountBN)
       .accounts({
         // @ts-ignore
         amm: amm,

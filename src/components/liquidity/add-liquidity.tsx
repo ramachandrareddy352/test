@@ -5,9 +5,14 @@ import { Metaplex } from "@metaplex-foundation/js";
 import { useDexProgram } from "./data-mutaion";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { ellipsify } from "../ui/ui-layout";
-import { Modal, message, Image } from "antd";
-import { PublicKey, Keypair, ConfirmedSignatureInfo } from "@solana/web3.js";
-import { getAssociatedTokenAddress } from "@solana/spl-token";
+import { Modal, message, Image, QRCode } from "antd";
+import {
+  PublicKey,
+  Keypair,
+  ConfirmedSignatureInfo,
+  Connection,
+} from "@solana/web3.js";
+import { getAssociatedTokenAddress, getMint } from "@solana/spl-token";
 import { DownOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import {
   createQR,
@@ -17,12 +22,18 @@ import {
   TransactionRequestURLFields,
 } from "@solana/pay";
 import BigNumber from "bignumber.js";
+import BN from "bn.js";
 
 type TokenData = {
   tokenMint: string;
   poolBalance: number;
   symbol: string;
   name: string;
+  decimals: number;
+};
+
+const convertToBaseUnits = (amount: number, decimals: number): number => {
+  return amount * 10 ** decimals;
 };
 
 export function AddLiquidity() {
@@ -72,7 +83,6 @@ export function AddLiquidity() {
     setPaymentStatus("Preparing transaction...");
 
     try {
-      setShowQR(true);
       // Set minLiquidity (adjust this based on your logic; 101 as a placeholder)
       const minLiquidity = 101;
       const reference = new Keypair().publicKey;
@@ -81,8 +91,14 @@ export function AddLiquidity() {
       params.append("reference", reference.toString());
       params.append("mintA", tokenOne.tokenMint);
       params.append("mintB", tokenTwo.tokenMint);
-      params.append("depositAmountA", tokenOneAmount.toString());
-      params.append("depositAmountB", tokenTwoAmount.toString());
+      params.append(
+        "depositAmountA",
+        convertToBaseUnits(tokenOneAmount, tokenOne.decimals).toString()
+      );
+      params.append(
+        "depositAmountB",
+        convertToBaseUnits(tokenTwoAmount, tokenTwo.decimals).toString()
+      );
       params.append("minLiquidity", minLiquidity.toString());
       params.append("fees", fees.toString());
 
@@ -96,11 +112,12 @@ export function AddLiquidity() {
       console.log(apiUrl);
 
       const url = encodeURL(urlFields);
-      const qr = createQR(url, 360, "white", "black");
+      const qr = createQR(url, 250, "white", "black");
       console.log(url);
 
       console.log("showing qr");
       console.log(qrRef.current);
+      setShowQR(true);
       if (qrRef.current) {
         qrRef.current.innerHTML = "";
         qr.append(qrRef.current);
@@ -181,8 +198,8 @@ export function AddLiquidity() {
           mintA: tokenOne.tokenMint,
           mintB: tokenTwo.tokenMint,
           fees: fees,
-          amountA: tokenOneAmount,
-          amountB: tokenTwoAmount,
+          amountA: convertToBaseUnits(tokenOneAmount, tokenOne.decimals),
+          amountB: convertToBaseUnits(tokenTwoAmount, tokenTwo.decimals),
         })
         .then((data) => {
           console.log("Liquidity added successfully!", data);
@@ -288,12 +305,15 @@ export function AddLiquidity() {
                 symbolA = tokenA.symbol;
                 nameA = tokenA.name;
               }
+              const mintInfoA = await getMint(connection, new PublicKey(mintA));
+
               uniqueMintsA.add(mintA);
               dataA.push({
                 tokenMint: mintA,
                 poolBalance: tokenAmountA,
                 symbol: symbolA,
                 name: nameA,
+                decimals: mintInfoA.decimals,
               });
             }
 
@@ -317,13 +337,17 @@ export function AddLiquidity() {
                   .nfts()
                   .findByMint({ mintAddress: pool.account.mintB });
                 symbolB = tokenB.symbol;
+                nameB = tokenB.name;
               }
+              const mintInfoB = await getMint(connection, new PublicKey(mintB));
+
               uniqueMintsB.add(mintB);
               dataB.push({
                 tokenMint: mintB,
                 poolBalance: tokenAmountB,
                 symbol: symbolB,
                 name: nameB,
+                decimals: mintInfoB.decimals,
               });
             }
           } catch (error) {
@@ -434,7 +458,9 @@ export function AddLiquidity() {
                 <input
                   className="w-full outline-none h-8 px-2 appearance-none text-3xl bg-transparent"
                   type="number"
-                  onChange={(e) => setTokenOneAmount(parseInt(e.target.value))}
+                  onChange={(e) =>
+                    setTokenOneAmount(parseFloat(e.target.value))
+                  }
                   value={tokenOneAmount}
                   placeholder={"0.0"}
                 />
@@ -469,7 +495,9 @@ export function AddLiquidity() {
                 <input
                   className="w-full outline-none h-8 px-2 appearance-none text-3xl bg-transparent"
                   type="number"
-                  onChange={(e) => setTokenTwoAmount(parseInt(e.target.value))}
+                  onChange={(e) =>
+                    setTokenTwoAmount(parseFloat(e.target.value))
+                  }
                   value={tokenTwoAmount}
                   placeholder={"0.0"}
                 />
@@ -564,20 +592,24 @@ export function AddLiquidity() {
                 >
                   Use Scanner (Solana Pay)
                 </button>
-                {showQR && (
-                  <>
-                    <h1 className="text-3xl">
-                      Scan QR Code to Confirm Deposit
-                    </h1>
-                    <div ref={qrRef} />
-                    <p>
-                      Status: <strong>{paymentStatus}</strong>
-                    </p>
-                  </>
-                )}
               </div>
             )}
           </div>
+          <Modal
+            open={showQR}
+            footer={null}
+            onCancel={() => setShowQR(false)}
+            title="Scan QR Code to Confirm Deposit"
+            width="90%"
+            className="max-w-[300px]"
+          >
+            <div className="modalContent ">
+              <div ref={qrRef} />
+              <p>
+                Status: <strong>{paymentStatus}</strong>
+              </p>
+            </div>
+          </Modal>
         </div>
       ) : (
         <div

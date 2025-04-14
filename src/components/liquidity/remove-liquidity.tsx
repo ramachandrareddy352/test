@@ -1,20 +1,31 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Metaplex } from "@metaplex-foundation/js";
 import { Modal, message, Image } from "antd";
 import { useDexProgram } from "./data-mutaion";
 import { ellipsify } from "../ui/ui-layout";
-import { PublicKey } from "@solana/web3.js";
+import { ConfirmedSignatureInfo, Keypair, PublicKey } from "@solana/web3.js";
 import { getAssociatedTokenAddress } from "@solana/spl-token";
 import { DownOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import {
+  createQR,
+  encodeURL,
+  findReference,
+  FindReferenceError,
+  TransactionRequestURLFields,
+} from "@solana/pay";
 
 type TokenData = {
   tokenMint: string;
   poolBalance: number;
   symbol: string;
   name: string;
+};
+
+const convertToBaseUnits = (amount: number, decimals: number): number => {
+  return amount * 10 ** decimals;
 };
 
 export function RemoveLiquidity() {
@@ -37,6 +48,125 @@ export function RemoveLiquidity() {
   const [userOneBalance, setUserOneBalance] = useState(0);
   const [userTwoBalance, setUserTwoBalance] = useState(0);
 
+  // ----------- Solana Pay State -----------
+  const qrRef = useRef<HTMLDivElement>(null);
+  const [paymentStatus, setPaymentStatus] = useState("");
+  const [showQR, setShowQR] = useState(false);
+  // const [reference, setReference] = useState();
+
+  const startPaymentTransfer = async () => {
+    console.log("stage-1");
+    if (!publicKey) {
+      message.error("Connect your wallet first");
+      return;
+    }
+    if (!tokenOne || !tokenTwo || liquidityAmount === 0) {
+      message.error("Please select both tokens and enter their amounts");
+      return;
+    }
+    console.log("stage-1");
+
+    setPaymentStatus("Preparing transaction...");
+
+    try {
+      setShowQR(true);
+      // Set minLiquidity (adjust this based on your logic; 101 as a placeholder)
+      const reference = new Keypair().publicKey;
+      const tokenOneAmount = 1;
+      const tokenTwoAmount = 1;
+
+      const params = new URLSearchParams();
+      params.append("reference", reference.toString());
+      params.append("mintA", tokenOne.tokenMint);
+      params.append("mintB", tokenTwo.tokenMint);
+      params.append("minAmountA", tokenOneAmount.toString());
+      params.append("minAmountB", tokenTwoAmount.toString());
+      params.append("liquidityAmount", convertToBaseUnits(liquidityAmount, 6).toString());
+      params.append("fees", fees.toString());
+
+      const apiUrl = `${location.protocol}//${
+        location.host
+      }/api/withdraw_liquidity?${params.toString()}`;
+      // Encode the API URL into a QR code
+      const urlFields: TransactionRequestURLFields = {
+        link: new URL(apiUrl),
+      };
+      console.log(apiUrl);
+
+      const url = encodeURL(urlFields);
+      const qr = createQR(url, 250, "white", "black");
+      console.log(url);
+
+      console.log("showing qr");
+      console.log(qrRef.current);
+      if (qrRef.current) {
+        qrRef.current.innerHTML = "";
+        qr.append(qrRef.current);
+        console.log("appended");
+      } else {
+        return;
+      }
+      setPaymentStatus("Pending...");
+      console.log("\n5. Find the transaction");
+
+      const signatureInfo: ConfirmedSignatureInfo = await new Promise(
+        (resolve, reject) => {
+          // Start checking every 2 seconds
+          const intervalId = setInterval(async () => {
+            console.count("Checking for transaction...");
+            try {
+              const result = await findReference(connection, reference, {
+                finality: "confirmed",
+              });
+              // Transaction found, stop further checks.
+              clearInterval(intervalId);
+              clearTimeout(timeoutId);
+              console.log("\n 🖌  Signature found: ", result.signature);
+              resolve(result);
+            } catch (error: any) {
+              if (!(error instanceof FindReferenceError)) {
+                clearInterval(intervalId);
+                clearTimeout(timeoutId);
+                reject(error);
+              }
+            }
+          }, 2000);
+
+          // Set a timeout to stop checking after 2 minutes
+          const timeoutId = setTimeout(() => {
+            clearInterval(intervalId);
+            console.log("❌ Payment timeout reached.");
+            setPaymentStatus("Timeout Reached");
+            reject(new Error("Payment timeout reached"));
+          }, 2 * 60 * 1000); // 2 minutes timeout
+        }
+      );
+
+      setShowQR(false);
+      let { signature } = signatureInfo;
+      setPaymentStatus("Confirmed");
+      const transaction = await connection.getTransaction(signature, {
+        commitment: "confirmed",
+        maxSupportedTransactionVersion: 0,
+      });
+      console.log(transaction);
+      if (!transaction || !transaction.meta) {
+        console.error("Transaction not found or incomplete");
+        return false;
+      }
+      if (transaction.meta.err) {
+        console.error("Transaction failed with error:", transaction.meta.err);
+        return false;
+      }
+    } catch (error: any) {
+      console.error("Error starting payment transfer:", error);
+      message.error(error.message);
+      setShowQR(false);
+    }
+  };
+
+  // ----------- End Solana Pay code -----------
+
   const withdrawLiquidity = async () => {
     if (
       liquidityAmount != 0 &&
@@ -49,7 +179,7 @@ export function RemoveLiquidity() {
           mintA: tokenOne?.tokenMint,
           mintB: tokenTwo?.tokenMint,
           fees: fees,
-          liquidity: liquidityAmount,
+          liquidity: convertToBaseUnits(liquidityAmount, 6),
         })
         .then((data) => {
           console.log("Liquidity Withdraw successfully!");
@@ -213,8 +343,7 @@ export function RemoveLiquidity() {
   }, []);
 
   return (
-    <div
-      className="bg-zinc-900 p-2 px-1 sm:p-4 sm:px-6 rounded-xl my-2 text-white mx-auto">
+    <div className="bg-zinc-900 p-2 px-1 sm:p-4 sm:px-6 rounded-xl my-2 text-white mx-auto">
       <Modal
         open={isOpen1}
         footer={null}
@@ -304,9 +433,11 @@ export function RemoveLiquidity() {
           <div className="relative bg-[#212429] p-4 rounded-xl mb-2 border-[2px] border-transparent hover:border-zinc-600 md:flex md:flex-row md:justify-between">
             <div className="flex justify-between mb-2 items-center flex-col ">
               <p>Mint-A </p>
-              <div
-                className="flex p-2 pr-5 pl-3 bg-black rounded-[20px] cursor-pointer w-full justify-center">
-                <div className="assetOne pb-1 w-max" onClick={() => openModal(1)}>
+              <div className="flex p-2 pr-5 pl-3 bg-black rounded-[20px] cursor-pointer w-full justify-center">
+                <div
+                  className="assetOne pb-1 w-max"
+                  onClick={() => openModal(1)}
+                >
                   <Image
                     src="/token.webp"
                     alt="assetOneLogo"
@@ -332,9 +463,11 @@ export function RemoveLiquidity() {
 
             <div className="flex justify-between mb-2 items-center flex-col ">
               <p>Mint-B </p>
-              <div
-                className="flex p-2 pr-5 pl-3 bg-black rounded-[20px] cursor-pointer w-full justify-center">
-                <div className="assetOne pb-1 w-max" onClick={() => openModal(2)}>
+              <div className="flex p-2 pr-5 pl-3 bg-black rounded-[20px] cursor-pointer w-full justify-center">
+                <div
+                  className="assetOne pb-1 w-max"
+                  onClick={() => openModal(2)}
+                >
                   <Image
                     src="/token.webp"
                     alt="assetOneLogo"
@@ -407,7 +540,7 @@ export function RemoveLiquidity() {
                 textAlign: "center",
               }}
               type="number"
-              onChange={(e) => setLiquidityAmount(parseInt(e.target.value))}
+              onChange={(e) => setLiquidityAmount(parseFloat(e.target.value))}
               value={liquidityAmount}
               placeholder={"0.0"}
             />
@@ -419,21 +552,51 @@ export function RemoveLiquidity() {
                 <span className="loading loading-spinner loading-lg"></span>
               </div>
             ) : (
-              <button
-                type="button"
-                className="flex btn btn-outline-primary my-5"
-                style={{
-                  width: "100%",
-                  backgroundColor: "white",
-                  color: "black",
-                  fontSize: "20px",
-                }}
-                onClick={withdrawLiquidity}
-              >
-                Withdraw Liquidity
-              </button>
+              <div>
+                <button
+                  type="button"
+                  className="flex btn btn-outline-primary my-5"
+                  style={{
+                    width: "100%",
+                    backgroundColor: "white",
+                    color: "black",
+                    fontSize: "20px",
+                  }}
+                  onClick={withdrawLiquidity}
+                >
+                  Withdraw Liquidity
+                </button>
+                <button
+                  type="button"
+                  className="flex btn btn-outline-primary my-5"
+                  style={{
+                    width: "100%",
+                    backgroundColor: "white",
+                    color: "black",
+                    fontSize: "20px",
+                  }}
+                  onClick={startPaymentTransfer}
+                >
+                  Use Scanner (Solana Pay)
+                </button>
+              </div>
             )}
           </div>
+          <Modal
+            open={showQR}
+            footer={null}
+            onCancel={() => setShowQR(false)}
+            title="Scan QR Code to Confirm Withdraw"
+            width="90%"
+            className="max-w-[300px]"
+          >
+            <div className="modalContent ">
+              <div ref={qrRef} />
+              <p>
+                Status: <strong>{paymentStatus}</strong>
+              </p>
+            </div>
+          </Modal>
         </div>
       ) : (
         <div

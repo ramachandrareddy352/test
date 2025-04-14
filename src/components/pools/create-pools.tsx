@@ -1,11 +1,21 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { useDexProgram } from "./pool-mutation";
-import { message } from "antd";
+import { message, Modal } from "antd";
 import { InfoCircleOutlined } from "@ant-design/icons";
+import { ConfirmedSignatureInfo, Keypair } from "@solana/web3.js";
+import {
+  createQR,
+  encodeURL,
+  findReference,
+  FindReferenceError,
+  TransactionRequestURLFields,
+} from "@solana/pay";
+import { useConnection } from "@solana/wallet-adapter-react";
 
 export function CreatePools() {
+  const { connection } = useConnection();
   const [formData, setFormData] = useState({
     tokenA: "",
     tokenB: "",
@@ -46,6 +56,111 @@ export function CreatePools() {
       formData.fee = Number(value);
     }
   };
+
+  // ----------- Solana Pay State -----------
+  const qrRef = useRef<HTMLDivElement>(null);
+  const [paymentStatus, setPaymentStatus] = useState("");
+  const [showQR, setShowQR] = useState(false);
+  // const [reference, setReference] = useState();
+
+  const startPaymentTransfer = async () => {
+    console.log("stage-1");
+
+    setPaymentStatus("Preparing transaction...");
+
+    try {
+      setShowQR(true);
+      // Set minLiquidity (adjust this based on your logic; 101 as a placeholder)
+      const reference = new Keypair().publicKey;
+
+      const params = new URLSearchParams();
+      params.append("reference", reference.toString());
+      params.append("mintA", formData.tokenA);
+      params.append("mintB", formData.tokenB);
+      params.append("fees", formData.fee.toString());
+
+      const apiUrl = `${location.protocol}//${
+        location.host
+      }/api/create_pool?${params.toString()}`;
+      // Encode the API URL into a QR code
+      const urlFields: TransactionRequestURLFields = {
+        link: new URL(apiUrl),
+      };
+      console.log(apiUrl);
+
+      const url = encodeURL(urlFields);
+      const qr = createQR(url, 250, "white", "black");
+      console.log(url);
+
+      console.log("showing qr");
+      console.log(qrRef.current);
+      if (qrRef.current) {
+        qrRef.current.innerHTML = "";
+        qr.append(qrRef.current);
+        console.log("appended");
+      } else {
+        return;
+      }
+      setPaymentStatus("Pending...");
+      console.log("\n5. Find the transaction");
+
+      const signatureInfo: ConfirmedSignatureInfo = await new Promise(
+        (resolve, reject) => {
+          // Start checking every 2 seconds
+          const intervalId = setInterval(async () => {
+            console.count("Checking for transaction...");
+            try {
+              const result = await findReference(connection, reference, {
+                finality: "confirmed",
+              });
+              // Transaction found, stop further checks.
+              clearInterval(intervalId);
+              clearTimeout(timeoutId);
+              console.log("\n 🖌  Signature found: ", result.signature);
+              resolve(result);
+            } catch (error: any) {
+              if (!(error instanceof FindReferenceError)) {
+                clearInterval(intervalId);
+                clearTimeout(timeoutId);
+                reject(error);
+              }
+            }
+          }, 2000);
+
+          // Set a timeout to stop checking after 2 minutes
+          const timeoutId = setTimeout(() => {
+            clearInterval(intervalId);
+            console.log("❌ Payment timeout reached.");
+            setPaymentStatus("Timeout Reached");
+            reject(new Error("Payment timeout reached"));
+          }, 2 * 60 * 1000); // 2 minutes timeout
+        }
+      );
+
+      setShowQR(false);
+      let { signature } = signatureInfo;
+      setPaymentStatus("Confirmed");
+      const transaction = await connection.getTransaction(signature, {
+        commitment: "confirmed",
+        maxSupportedTransactionVersion: 0,
+      });
+      console.log(transaction);
+      if (!transaction || !transaction.meta) {
+        console.error("Transaction not found or incomplete");
+        return false;
+      }
+      if (transaction.meta.err) {
+        console.error("Transaction failed with error:", transaction.meta.err);
+        return false;
+      }
+    } catch (error: any) {
+      console.error("Error starting payment transfer:", error);
+      message.error(error.message);
+      setShowQR(false);
+    }
+  };
+
+  // ----------- End Solana Pay code -----------
 
   return (
     <div className="container  py-3 text-white">
@@ -135,21 +250,51 @@ export function CreatePools() {
               <span className="loading loading-spinner loading-lg"></span>
             </div>
           ) : (
-            <button
-              type="button"
-              className="flex btn btn-outline-primary my-5"
-              style={{
-                width: "100%",
-                backgroundColor: "white",
-                color: "black",
-                fontSize: "20px",
-              }}
-              onClick={handleSubmit}
-            >
-              Create Pool
-            </button>
+            <div>
+              <button
+                type="button"
+                className="flex btn btn-outline-primary my-5"
+                style={{
+                  width: "100%",
+                  backgroundColor: "white",
+                  color: "black",
+                  fontSize: "20px",
+                }}
+                onClick={handleSubmit}
+              >
+                Create Pool
+              </button>
+              <button
+                type="button"
+                className="flex btn btn-outline-primary my-5"
+                style={{
+                  width: "100%",
+                  backgroundColor: "white",
+                  color: "black",
+                  fontSize: "20px",
+                }}
+                onClick={startPaymentTransfer}
+              >
+                Use Scanner (Solana Pay)
+              </button>
+            </div>
           )}
         </form>
+        <Modal
+          open={showQR}
+          footer={null}
+          onCancel={() => setShowQR(false)}
+          title="Scan QR Code to Confirm Withdraw"
+          width="90%"
+          className="max-w-[300px]"
+        >
+          <div className="modalContent ">
+            <div ref={qrRef} />
+            <p>
+              Status: <strong>{paymentStatus}</strong>
+            </p>
+          </div>
+        </Modal>
       </div>
     </div>
   );
