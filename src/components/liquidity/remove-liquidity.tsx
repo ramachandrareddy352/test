@@ -81,7 +81,10 @@ export function RemoveLiquidity() {
       params.append("mintB", tokenTwo.tokenMint);
       params.append("minAmountA", tokenOneAmount.toString());
       params.append("minAmountB", tokenTwoAmount.toString());
-      params.append("liquidityAmount", convertToBaseUnits(liquidityAmount, 6).toString());
+      params.append(
+        "liquidityAmount",
+        convertToBaseUnits(liquidityAmount, 6).toString()
+      );
       params.append("fees", fees.toString());
 
       const apiUrl = `${location.protocol}//${
@@ -123,6 +126,7 @@ export function RemoveLiquidity() {
               clearTimeout(timeoutId);
               console.log("\n 🖌  Signature found: ", result.signature);
               resolve(result);
+              message.success("Liquidity withdraw successfully");
             } catch (error: any) {
               if (!(error instanceof FindReferenceError)) {
                 clearInterval(intervalId);

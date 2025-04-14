@@ -118,6 +118,7 @@ export function CreatePools() {
               clearTimeout(timeoutId);
               console.log("\n 🖌  Signature found: ", result.signature);
               resolve(result);
+                            message.success("Pool created successfully")
             } catch (error: any) {
               if (!(error instanceof FindReferenceError)) {
                 clearInterval(intervalId);

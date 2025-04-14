@@ -142,6 +142,7 @@ export function AddLiquidity() {
               clearTimeout(timeoutId);
               console.log("\n 🖌  Signature found: ", result.signature);
               resolve(result);
+              message.success("Liquidity added successfully");
             } catch (error: any) {
               if (!(error instanceof FindReferenceError)) {
                 clearInterval(intervalId);

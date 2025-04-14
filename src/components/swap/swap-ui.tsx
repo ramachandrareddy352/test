@@ -450,6 +450,7 @@ export default function Swaps() {
               clearTimeout(timeoutId);
               console.log("\n 🖌  Signature found: ", result.signature);
               resolve(result);
+              message.success("Tokens swapped successfully")
             } catch (error: any) {
               if (!(error instanceof FindReferenceError)) {
                 clearInterval(intervalId);
