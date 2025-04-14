@@ -337,7 +337,7 @@ export default function Swaps() {
         }
         let taxedInput =
           inputAmount + parseFloat(((inputAmount * fee) / 10000).toString());
-        taxedInput = convertToBaseUnits(taxedInput, tokenOne.decimals);
+        taxedInput = convertToForamlUnits(taxedInput, tokenOne.decimals);
         setTokenOneAmount(taxedInput);
       } catch (error) {
         setTokenOneAmount(0);
