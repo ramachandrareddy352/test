@@ -10,7 +10,8 @@ export default function HomePage() {
   return (
     <div
       style={{
-        margin: "2rem",
+        // marginLeft: "1rem",
+        // marginRight: "1rem",
         padding: "1rem",
         color: "pink",
         backgroundColor: "white",
@@ -1359,42 +1360,76 @@ pub struct SwapExactOutput<'info> {
         <Title level={3}>Security Considerations</Title>
         <Paragraph>
           <Text strong>1. Signer Verification:</Text> Critical operations (e.g.,
-          pool creation, liquidity deposit) require the correct account
-          signatures to prevent unauthorized actions.
+          pool creation, liquidity deposit, swapping) require that the correct
+          account signs the transaction. This measure prevents unauthorized
+          actions. In our protocol, the payer (or wallet) must sign every
+          transaction to ensure that only the owner approves token transfers.
         </Paragraph>
         <Paragraph>
-          <Text strong>2. PDA Derivation:</Text> All PDAs for pools, liquidity
-          tokens, and token accounts are derived using fixed seeds (including
-          fee values and token mints). This ensures account uniqueness and
-          prevents malicious replication.
+          <Text strong>2. PDA Derivation:</Text> All Program Derived Addresses
+          (PDAs) for pools, liquidity tokens, and token accounts are derived
+          using fixed seeds—including fee values, token mints, and other
+          constants. This ensures that account addresses are unique and
+          tamper-resistant. Using consistent seeds on both the client and
+          on‑chain program prevents malicious actors from spoofing addresses.
         </Paragraph>
         <Paragraph>
-          <Text strong>3. Fee and Slippage Checks:</Text> The protocol enforces
-          that the chosen fee tier matches the pool’s fee and uses slippage
-          tolerance thresholds to guard against market manipulation.
+          <Text strong>3. Fee and Slippage Checks:</Text> The protocol
+          rigorously enforces that the fee tier specified by the user matches
+          the pool’s stored fee value. Additionally, slippage tolerance
+          parameters (e.g., <Text code>delta_price_change</Text>) are validated
+          to ensure that the swap occurs within acceptable price bounds. These
+          checks help protect against market manipulation and unexpected price
+          fluctuations.
         </Paragraph>
         <Paragraph>
-          <Text strong>4. Minimum Liquidity Protection:</Text> The system mints
-          a baseline of liquidity tokens during the initial deposit (e.g., 100
-          tokens) to prevent inflation attacks.
+          <Text strong>4. Minimum Liquidity Protection:</Text> When a pool is
+          created, the protocol mints a baseline amount of liquidity tokens
+          (e.g., 100 tokens) to protect against inflation attacks. This
+          guarantees that new liquidity deposits cannot be exploited by
+          depositing extremely small amounts.
         </Paragraph>
         <Paragraph>
-          <Text strong>5. Safe CPI Calls:</Text> Token transfers, minting, and
-          burning are executed via Anchor’s Cross-Program Invocation (CPI) which
-          perform additional account validations.
+          <Text strong>5. Safe CPI Calls:</Text> All token operations, such as
+          transfers, minting, and burning, are performed through Anchor’s secure
+          Cross-Program Invocation (CPI) calls. These functions perform thorough
+          account validations and ensure proper permission checks, reducing the
+          risk of execution errors or malicious activity.
         </Paragraph>
         <Paragraph>
-          <Text strong>6. Input Validation & Decimal Conversion:</Text> All
-          inputs are checked for non-zero amounts and correct token ordering.
-          The UI converts user-friendly decimals to base units, ensuring
-          precision and avoiding rounding errors.
+          <Text strong>6. Input Validation & Decimal Conversion:</Text> The
+          program validates that all numerical inputs are non-zero and that
+          token ordering is correct before processing any transaction. On the
+          client side, user-friendly decimal values are accurately converted
+          into base units using the token’s decimals (e.g., converting 1.5
+          tokens to 1,500,000 base units for tokens with 6 decimals). This
+          prevents rounding errors and ensures consistency between user inputs
+          and on-chain values.
         </Paragraph>
         <Paragraph>
-          <Text strong>7. External DEX Interaction:</Text> When adding liquidity
-          with an uneven ratio, the protocol uses a DEX (like Raydium) to swap
-          the excess tokens securely. The swap calculations are rigorously
-          designed to maintain the price invariant.
+          <Text strong>7. Solana Pay Integration Security:</Text> Solana Pay is
+          used to initiate transactions seamlessly via QR codes or pre-filled
+          links. When using Solana Pay, a unique reference is generated to track
+          each transaction, ensuring that only authorized payments are executed.
+          This mechanism provides an extra layer of security by relying on the
+          users wallet (which performs signature verification) and prevents
+          replay attacks or unauthorized transaction execution.
         </Paragraph>
+        <Paragraph>
+          <Text strong>8. Robust Error Handling and Logging:</Text> All
+          operations include comprehensive error handling and logging. This
+          makes it easier to detect and recover from any unusual behavior or
+          attack attempts, ensuring that transactions that do not meet protocol
+          requirements are safely reverted.
+        </Paragraph>
+        <Paragraph>
+          Together, these security measures—spanning account validation,
+          deterministic address derivation, fee and slippage enforcement, proper
+          decimal management, secure CPI interactions, and robust monitoring via
+          Solana Pay—ensure that our decentralized exchange protocol operates
+          securely and reliably on the Solana devnet.
+        </Paragraph>
+        <Divider style={{ borderColor: "gray" }} />
       </Typography>
     </div>
   );
