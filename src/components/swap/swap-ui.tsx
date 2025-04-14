@@ -57,8 +57,8 @@ export default function Swaps() {
   const [rangeValue, setRangeValue] = useState(100);
   const [fees, setFees] = useState(100);
   const [isOpen, setIsOpen] = useState(false);
-  const [tokenOneAmount, setTokenOneAmount] = useState(0);
-  const [tokenTwoAmount, setTokenTwoAmount] = useState(0);
+  const [tokenOneAmount, setTokenOneAmount] = useState(0.0);
+  const [tokenTwoAmount, setTokenTwoAmount] = useState(0.0);
   const [changeToken, setChangeToken] = useState<number>(1);
   const [tokenData, setTokenData] = useState<TokenData[]>([]);
   const [tokenOne, setTokenOne] = useState<TokenData>();
@@ -243,7 +243,7 @@ export default function Swaps() {
 
     if (inputAmount !== "0" && inputAmount !== "" && tokenOne && tokenTwo) {
       try {
-        inputAmount = convertToBaseUnits(event.target.value, tokenOne.decimals);
+        inputAmount = convertToBaseUnits(inputAmount, tokenOne.decimals);
         const [ammAccount] = PublicKey.findProgramAddressSync(
           [Buffer.from("amm")],
           program.programId
@@ -298,7 +298,7 @@ export default function Swaps() {
     setTokenTwoAmount(outputAmount);
 
     if (outputAmount !== "0" && outputAmount !== "" && tokenOne && tokenTwo) {
-      outputAmount = convertToBaseUnits(event.target.value, tokenTwo.decimals);
+      outputAmount = convertToBaseUnits(outputAmount, tokenTwo.decimals);
       try {
         const [ammAccount] = PublicKey.findProgramAddressSync(
           [Buffer.from("amm")],

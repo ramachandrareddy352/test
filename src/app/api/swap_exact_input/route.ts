@@ -97,7 +97,9 @@ export async function POST(request: NextRequest) {
       [Buffer.from("pool-account-b"), pool.toBuffer(), mintB.toBuffer()],
       PROGRAM_ID
     );
-
+    console.log(
+      amm + "---" + pool + "---" + poolAccountA + "---" + poolAccountB
+    );
     // User associated token accounts
     const depositorAccountA = await getAssociatedTokenAddress(mintA, depositor);
     const depositorAccountB = await getAssociatedTokenAddress(mintB, depositor);
