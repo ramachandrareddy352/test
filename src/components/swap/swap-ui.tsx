@@ -393,7 +393,7 @@ export default function Swaps() {
           location.host
         }/api/swap_exact_input?${params.toString()}`;
       } else {
-        const maxInputAmount = 2 ^ 53;
+        const maxInputAmount = 2 ** 53;
         const params = new URLSearchParams();
         params.append("mintA", tokenOne.tokenMint);
         params.append("mintB", tokenTwo.tokenMint);
@@ -450,7 +450,7 @@ export default function Swaps() {
               clearTimeout(timeoutId);
               console.log("\n 🖌  Signature found: ", result.signature);
               resolve(result);
-              message.success("Tokens swapped successfully")
+              message.success("Tokens swapped successfully");
             } catch (error: any) {
               if (!(error instanceof FindReferenceError)) {
                 clearInterval(intervalId);
