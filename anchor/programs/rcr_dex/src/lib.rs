@@ -6,7 +6,7 @@ pub mod utils;
 
 use anchor_lang::prelude::*;
 
-declare_id!("3wGvWeUNnuL9kq2iWFN1gPm7EpUMVjWdJoLodwqpMtdy");
+declare_id!("FAoQiEDBmQW7aPNwcsdp988aoDNSwSbxfxSMKxaqSEhY");
 
 #[program]
 pub mod rcr_dex {

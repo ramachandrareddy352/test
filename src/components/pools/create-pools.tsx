@@ -31,19 +31,11 @@ export function CreatePools() {
     } else {
       try {
         console.log(formData);
-        await createPoolMutation
-          .mutateAsync({
-            mintA: formData.tokenA,
-            mintB: formData.tokenB,
-            fees: formData.fee,
-          })
-          .then((data) => {
-            console.log("Pool created successfully!");
-            console.log("Response data:", data); // Log the returned data
-            formData.tokenA = "";
-            formData.tokenB = "";
-            formData.fee = 30;
-          });
+        await createPoolMutation.mutateAsync({
+          mintA: formData.tokenA,
+          mintB: formData.tokenB,
+          fees: formData.fee,
+        });
       } catch (error) {
         message.error("failed to create pool");
         console.log(error);
@@ -249,7 +241,7 @@ export function CreatePools() {
           </fieldset>
           <p>
             <InfoCircleOutlined /> User can create upto 3 pools with same two
-            tokens.
+            tokens with different fees.
           </p>
 
           {createPoolMutation.isPending ? (

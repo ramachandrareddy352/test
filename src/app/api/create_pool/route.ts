@@ -24,7 +24,7 @@ export type PostError = {
 };
 
 const PROGRAM_ID = new PublicKey(
-  "3wGvWeUNnuL9kq2iWFN1gPm7EpUMVjWdJoLodwqpMtdy"
+  "FAoQiEDBmQW7aPNwcsdp988aoDNSwSbxfxSMKxaqSEhY"
 );
 
 export async function GET(request: NextRequest, response: NextResponse<Data>) {

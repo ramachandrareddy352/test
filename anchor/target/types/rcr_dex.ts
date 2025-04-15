@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/rcr_dex.json`.
  */
 export type RcrDex = {
-  address: "3wGvWeUNnuL9kq2iWFN1gPm7EpUMVjWdJoLodwqpMtdy";
+  address: "FAoQiEDBmQW7aPNwcsdp988aoDNSwSbxfxSMKxaqSEhY";
   metadata: {
     name: "rcrDex";
     version: "0.1.0";

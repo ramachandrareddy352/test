@@ -26,7 +26,7 @@ export function getDexProgramId(cluster: Cluster) {
     case "devnet":
     case "testnet":
       // This is the program ID for the dex program on devnet and testnet.
-      return new PublicKey("3wGvWeUNnuL9kq2iWFN1gPm7EpUMVjWdJoLodwqpMtdy");
+      return new PublicKey("FAoQiEDBmQW7aPNwcsdp988aoDNSwSbxfxSMKxaqSEhY");
     case "mainnet-beta":
     default:
       return DEX_PROGRAM_ID;
