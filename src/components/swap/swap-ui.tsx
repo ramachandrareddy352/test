@@ -921,6 +921,21 @@ export default function Swaps() {
           )}
         </div>
       </div>
+      <Modal
+        open={showQR}
+        footer={null}
+        onCancel={() => setShowQR(false)}
+        title="Scan QR Code to Swap tokens"
+        width="90%"
+        className="max-w-[300px]"
+      >
+        <div className="modalContent ">
+          <div ref={qrRef} />
+          <p>
+            Status: <strong>{paymentStatus}</strong>
+          </p>
+        </div>
+      </Modal>
     </div>
   );
 }

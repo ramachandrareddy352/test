@@ -295,7 +295,7 @@ export function CreatePools() {
           open={showQR}
           footer={null}
           onCancel={() => setShowQR(false)}
-          title="Scan QR Code to Confirm Withdraw"
+          title="Scan QR Code to Create Pool"
           width="90%"
           className="max-w-[300px]"
         >
