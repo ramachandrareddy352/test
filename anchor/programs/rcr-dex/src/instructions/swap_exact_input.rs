@@ -50,22 +50,24 @@ pub fn swap_exact_input(
 
     if swap_a {
         require!(
-            delta_price_change >= get_price_percentage_changed(
-                pool_a.amount,
-                pool_b.amount,
-                pool_a.amount - output_amount,
-                pool_b.amount + input_amount,
-            ),
+            delta_price_change
+                >= get_price_percentage_changed(
+                    pool_a.amount,
+                    pool_b.amount,
+                    pool_a.amount - output_amount,
+                    pool_b.amount + input_amount,
+                ),
             Errors::InvalidPriceChange,
         );
     } else {
         require!(
-            delta_price_change >= get_price_percentage_changed(
-                pool_a.amount,
-                pool_b.amount,
-                pool_a.amount + input_amount,
-                pool_b.amount - output_amount,
-            ),
+            delta_price_change
+                >= get_price_percentage_changed(
+                    pool_a.amount,
+                    pool_b.amount,
+                    pool_a.amount + input_amount,
+                    pool_b.amount - output_amount,
+                ),
             Errors::InvalidPriceChange,
         );
     }

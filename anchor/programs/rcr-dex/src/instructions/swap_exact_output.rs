@@ -44,32 +44,35 @@ pub fn swap_exact_output(
 
     require!(taxed_input <= max_input_amount, Errors::OutputTooHigh);
     require!(
-        taxed_input < if swap_a {
-            ctx.accounts.trader_account_b.amount
-        } else {
-            ctx.accounts.trader_account_a.amount
-        },
+        taxed_input
+            < if swap_a {
+                ctx.accounts.trader_account_b.amount
+            } else {
+                ctx.accounts.trader_account_a.amount
+            },
         Errors::InsufficientBalance
     );
 
     if swap_a {
         require!(
-            delta_price_change >= get_price_percentage_changed(
-                pool_a.amount,
-                pool_b.amount,
-                pool_a.amount - output_amount,
-                pool_b.amount + taxed_input,
-            ),
+            delta_price_change
+                >= get_price_percentage_changed(
+                    pool_a.amount,
+                    pool_b.amount,
+                    pool_a.amount - output_amount,
+                    pool_b.amount + taxed_input,
+                ),
             Errors::InvalidPriceChange,
         );
     } else {
         require!(
-            delta_price_change >= get_price_percentage_changed(
-                pool_a.amount,
-                pool_b.amount,
-                pool_a.amount + taxed_input,
-                pool_b.amount - output_amount,
-            ),
+            delta_price_change
+                >= get_price_percentage_changed(
+                    pool_a.amount,
+                    pool_b.amount,
+                    pool_a.amount + taxed_input,
+                    pool_b.amount - output_amount,
+                ),
             Errors::InvalidPriceChange,
         );
     }

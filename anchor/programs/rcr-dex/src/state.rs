@@ -3,7 +3,6 @@ use anchor_lang::prelude::*;
 #[account]
 #[derive(InitSpace)]
 pub struct Amm {
-    pub admin: Pubkey,
     pub pool_count: u16,
     pub amm_bump: u8,
 }

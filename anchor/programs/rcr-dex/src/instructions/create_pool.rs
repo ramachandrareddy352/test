@@ -5,7 +5,6 @@ use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use crate::constants::*;
 use crate::errors::*;
 use crate::state::*;
-use crate::utils::*;
 
 pub fn create_pool(ctx: Context<CreatePool>, fees: u64) -> Result<()> {
     // pool should have to select any one of the fee tier only
@@ -17,18 +16,6 @@ pub fn create_pool(ctx: Context<CreatePool>, fees: u64) -> Result<()> {
         ctx.accounts.mint_a.key() > ctx.accounts.mint_b.key(),
         Errors::InTokensOrder
     );
-    require!(
-        ctx.accounts.payer.to_account_info().lamports() > POOL_CREATION_FEE,
-        Errors::InsufficientBalance
-    );
-
-    // transfer 0.1 SOL to create a pool
-    transfer_sol(
-        &ctx.accounts.payer,
-        &ctx.accounts.admin,
-        &ctx.accounts.system_program,
-        POOL_CREATION_FEE,
-    )?;
 
     // update the data to pool account
     let pool = &mut ctx.accounts.pool;
@@ -58,7 +45,6 @@ pub struct CreatePool<'info> {
         mut,
         seeds = [b"amm"],
         bump = amm.amm_bump,
-        constraint = admin.key() == amm.admin @ Errors::InvalidAdmin,  // it is also used to check owner
     )]
     pub amm: Box<Account<'info, Amm>>,
 
@@ -123,10 +109,6 @@ pub struct CreatePool<'info> {
         bump
     )]
     pub pool_account_b: Box<InterfaceAccount<'info, TokenAccount>>,
-
-    /// check : Adding a admin to the AMM
-    #[account(mut)]
-    pub admin: AccountInfo<'info>,
 
     /// The account paying for all rents
     #[account(mut)]

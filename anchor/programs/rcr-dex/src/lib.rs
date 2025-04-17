@@ -4,8 +4,9 @@ pub mod instructions;
 pub mod state;
 pub mod utils;
 
-use anchor_lang::prelude::*;
+use {anchor_lang::prelude::*, instructions::*};
 
+// Set the correct key here
 declare_id!("FAoQiEDBmQW7aPNwcsdp988aoDNSwSbxfxSMKxaqSEhY");
 
 #[program]
@@ -15,11 +16,6 @@ pub mod rcr_dex {
     pub fn create_amm(ctx: Context<CreateAmm>) -> Result<()> {
         msg!("Creating AMM ...");
         create_amm::create_amm(ctx)
-    }
-
-    pub fn change_amm_admin(ctx: Context<ChangeAmmAdmin>) -> Result<()> {
-        msg!("Changing admin ...");
-        change_amm_admin::change_amm_admin(ctx)
     }
 
     pub fn create_pool(ctx: Context<CreatePool>, fees: u64) -> Result<()> {

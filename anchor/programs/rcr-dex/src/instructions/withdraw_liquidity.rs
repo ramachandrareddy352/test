@@ -16,8 +16,10 @@ pub fn withdraw_liquidity(
     require!(liquidity_amount > 0, Errors::ZeroAmount);
     require!(fees == ctx.accounts.pool.fees, Errors::InvalidFee);
     // Transfer tokens from the pool
-    let amount_a = (liquidity_amount * ctx.accounts.pool_account_a.amount) / ctx.accounts.mint_liquidity.supply;
-    let amount_b = (liquidity_amount * ctx.accounts.pool_account_b.amount) / ctx.accounts.mint_liquidity.supply;
+    let amount_a = (liquidity_amount * ctx.accounts.pool_account_a.amount)
+        / ctx.accounts.mint_liquidity.supply;
+    let amount_b = (liquidity_amount * ctx.accounts.pool_account_b.amount)
+        / ctx.accounts.mint_liquidity.supply;
 
     require!(
         amount_a >= min_amount_a && amount_b >= min_amount_b,

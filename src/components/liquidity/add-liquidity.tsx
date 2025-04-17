@@ -5,13 +5,8 @@ import { Metaplex } from "@metaplex-foundation/js";
 import { useDexProgram } from "./data-mutaion";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { ellipsify } from "../ui/ui-layout";
-import { Modal, message, Image, QRCode } from "antd";
-import {
-  PublicKey,
-  Keypair,
-  ConfirmedSignatureInfo,
-  Connection,
-} from "@solana/web3.js";
+import { Modal, message, Image } from "antd";
+import { PublicKey, Keypair, ConfirmedSignatureInfo } from "@solana/web3.js";
 import { getAssociatedTokenAddress, getMint } from "@solana/spl-token";
 import { DownOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import {
@@ -21,8 +16,7 @@ import {
   FindReferenceError,
   TransactionRequestURLFields,
 } from "@solana/pay";
-import BigNumber from "bignumber.js";
-import BN from "bn.js";
+import { WalletButton } from "../solana/solana-provider";
 
 type TokenData = {
   tokenMint: string;
@@ -65,10 +59,6 @@ export function AddLiquidity() {
 
   const startPaymentTransfer = async () => {
     console.log("stage-1");
-    if (!publicKey) {
-      message.error("Connect your wallet first");
-      return;
-    }
     if (
       !tokenOne ||
       !tokenTwo ||
@@ -192,7 +182,8 @@ export function AddLiquidity() {
       tokenOneAmount !== 0 &&
       tokenTwoAmount !== 0 &&
       tokenOne?.tokenMint &&
-      tokenTwo?.tokenMint
+      tokenTwo?.tokenMint &&
+      publicKey
     ) {
       await addLiquidityMutation
         .mutateAsync({
@@ -205,24 +196,26 @@ export function AddLiquidity() {
         .then((data) => {
           console.log("Liquidity added successfully!", data);
         });
-      const ATAOne = await getAssociatedTokenAddress(
-        new PublicKey(tokenOne.tokenMint),
-        program.provider.publicKey || new PublicKey("")
-      );
+
       try {
+        const ATAOne = await getAssociatedTokenAddress(
+          new PublicKey(tokenOne.tokenMint),
+          publicKey
+        );
         const tokenAccount = await connection.getTokenAccountBalance(ATAOne);
         setUserOneBalance(tokenAccount.value.uiAmount || 0);
-      } catch (error) {
+      } catch(error){
         setUserOneBalance(0);
       }
-      const ATATwo = await getAssociatedTokenAddress(
-        new PublicKey(tokenTwo.tokenMint),
-        program.provider.publicKey || new PublicKey("")
-      );
+
       try {
+        const ATATwo = await getAssociatedTokenAddress(
+          new PublicKey(tokenTwo.tokenMint),
+          publicKey
+        );
         const tokenAccount = await connection.getTokenAccountBalance(ATATwo);
         setUserTwoBalance(tokenAccount.value.uiAmount || 0);
-      } catch (error) {
+      } catch(error) {
         setUserTwoBalance(0);
       }
     } else {
@@ -240,38 +233,63 @@ export function AddLiquidity() {
   }
 
   async function modifyToken(i: number) {
-    if (publicKey) {
-      if (changeToken === 1) {
-        const token = tokenDataA[i];
+    if (changeToken === 1) {
+      const token = tokenDataA[i];
+      if (publicKey) {
         const ATA = await getAssociatedTokenAddress(
           new PublicKey(token.tokenMint),
           publicKey
         );
-        try {
-          const tokenAccount = await connection.getTokenAccountBalance(ATA);
-          setUserOneBalance(tokenAccount.value.uiAmount || 0);
-        } catch (error) {
-          setUserOneBalance(0);
-        }
-        setTokenOne(token);
-        setIsOpen1(false);
+        const tokenAccount = await connection.getTokenAccountBalance(ATA);
+        setUserOneBalance(tokenAccount.value.uiAmount || 0);
       } else {
-        const token = tokenDataB[i];
+        setUserOneBalance(0);
+      }
+      setTokenOne(token);
+      setIsOpen1(false);
+    } else {
+      const token = tokenDataB[i];
+      if (publicKey) {
         const ATA = await getAssociatedTokenAddress(
           new PublicKey(token.tokenMint),
           publicKey
         );
-        try {
-          const tokenAccount = await connection.getTokenAccountBalance(ATA);
-          setUserTwoBalance(tokenAccount.value.uiAmount || 0);
-        } catch (error) {
-          setUserTwoBalance(0);
-        }
-        setTokenTwo(token);
-        setIsOpen2(false);
+        const tokenAccount = await connection.getTokenAccountBalance(ATA);
+        setUserTwoBalance(tokenAccount.value.uiAmount || 0);
+      } else {
+        setUserTwoBalance(0);
       }
+      setTokenTwo(token);
+      setIsOpen2(false);
     }
   }
+
+  useEffect(() => {
+    const fetchBalance = async () => {
+      if (publicKey && tokenOne) {
+        const ATA = await getAssociatedTokenAddress(
+          new PublicKey(tokenOne.tokenMint),
+          publicKey
+        );
+        const tokenAccount = await connection.getTokenAccountBalance(ATA);
+        setUserOneBalance(tokenAccount.value.uiAmount || 0);
+      } else {
+        setUserOneBalance(0);
+      }
+
+      if (publicKey && tokenTwo) {
+        const ATA = await getAssociatedTokenAddress(
+          new PublicKey(tokenTwo.tokenMint),
+          publicKey
+        );
+        const tokenAccount = await connection.getTokenAccountBalance(ATA);
+        setUserTwoBalance(tokenAccount.value.uiAmount || 0);
+      } else {
+        setUserTwoBalance(0);
+      }
+    };
+    fetchBalance();
+  }, [publicKey]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -567,19 +585,29 @@ export function AddLiquidity() {
               </div>
             ) : (
               <div>
-                <button
-                  type="button"
-                  className="flex btn btn-outline-primary my-5"
-                  style={{
-                    width: "100%",
-                    backgroundColor: "white",
-                    color: "black",
-                    fontSize: "20px",
-                  }}
-                  onClick={addLiquidity}
-                >
-                  Add Liquidity (Mutation)
-                </button>
+                {publicKey ? (
+                  <button
+                    type="button"
+                    className="flex btn btn-outline-primary my-5"
+                    style={{
+                      width: "100%",
+                      backgroundColor: "white",
+                      color: "black",
+                      fontSize: "20px",
+                    }}
+                    onClick={addLiquidity}
+                  >
+                    Add Liquidity (Mutation)
+                  </button>
+                ) : (
+                  <div style={{ width: "100%" }}>
+                    <div className="">
+                      <div className="text-center">
+                        <WalletButton />
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <button
                   type="button"
                   className="flex btn btn-outline-primary my-5"

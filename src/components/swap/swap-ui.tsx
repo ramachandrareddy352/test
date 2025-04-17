@@ -112,31 +112,34 @@ export default function Swaps() {
   }
 
   async function modifyToken(i: number) {
-    if (publicKey) {
-      const token = tokenData[i];
-      const ATA = await getAssociatedTokenAddress(
-        new PublicKey(token.tokenMint),
-        publicKey
-      );
-      if (changeToken === 1) {
-        try {
-          const tokenAccount = await connection.getTokenAccountBalance(ATA);
-          setUserOneBalance(tokenAccount.value.uiAmount || 0);
-        } catch (error) {
-          setUserOneBalance(0);
-        }
-        setTokenOne(token);
+    const token = tokenData[i];
+
+    if (changeToken === 1) {
+      if (publicKey) {
+        const ATA = await getAssociatedTokenAddress(
+          new PublicKey(token.tokenMint),
+          publicKey
+        );
+        const tokenAccount = await connection.getTokenAccountBalance(ATA);
+        setUserOneBalance(tokenAccount.value.uiAmount || 0);
       } else {
-        try {
-          const tokenAccount = await connection.getTokenAccountBalance(ATA);
-          setUserTwoBalance(tokenAccount.value.uiAmount || 0);
-        } catch (error) {
-          setUserTwoBalance(0);
-        }
-        setTokenTwo(token);
+        setUserOneBalance(0);
       }
-      setIsOpen(false);
+      setTokenOne(token);
+    } else {
+      if (publicKey) {
+        const ATA = await getAssociatedTokenAddress(
+          new PublicKey(token.tokenMint),
+          publicKey
+        );
+        const tokenAccount = await connection.getTokenAccountBalance(ATA);
+        setUserTwoBalance(tokenAccount.value.uiAmount || 0);
+      } else {
+        setUserTwoBalance(0);
+      }
+      setTokenTwo(token);
     }
+    setIsOpen(false);
   }
 
   function switchTokens() {
@@ -153,6 +156,9 @@ export default function Swaps() {
   }
 
   const swapTokens = async () => {
+    if (!publicKey) {
+      message.error("Connect your wallet");
+    }
     if (tokenOneAmount == 0 || tokenTwoAmount == 0) {
       message.error("Enter valid amount to swap");
     } else if (
@@ -516,6 +522,33 @@ export default function Swaps() {
   // ----------- End Solana Pay code -----------
 
   useEffect(() => {
+    const fetchBalance = async () => {
+      if (publicKey && tokenOne) {
+        const ATA = await getAssociatedTokenAddress(
+          new PublicKey(tokenOne.tokenMint),
+          publicKey
+        );
+        const tokenAccount = await connection.getTokenAccountBalance(ATA);
+        setUserOneBalance(tokenAccount.value.uiAmount || 0);
+      } else {
+        setUserOneBalance(0);
+      }
+
+      if (publicKey && tokenTwo) {
+        const ATA = await getAssociatedTokenAddress(
+          new PublicKey(tokenTwo.tokenMint),
+          publicKey
+        );
+        const tokenAccount = await connection.getTokenAccountBalance(ATA);
+        setUserTwoBalance(tokenAccount.value.uiAmount || 0);
+      } else {
+        setUserTwoBalance(0);
+      }
+    };
+    fetchBalance();
+  }, [publicKey]);
+
+  useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       if (!poolAccounts.isLoading && poolAccounts.data) {
@@ -657,7 +690,7 @@ export default function Swaps() {
     fetchOutput();
   }, [tokenOne, tokenTwo, fees]);
 
-  return publicKey ? (
+  return (
     <div className="  from-blue-50 to-indigo-50 flex items-center justify-center p-4 lg:pb-0 text-white w-[100%] md:w-[800px] mx-auto h-calc(100vh-135px) relative mb-[15px] lg:mb-0">
       <div className="w-full">
         <div className="bg-zinc-900 p-2 px-1 sm:p-4 sm:px-6 rounded-xl my-2 text-white mx-auto relative">
@@ -838,19 +871,29 @@ export default function Swaps() {
                   </div>
                 ) : (
                   <div>
-                    <button
-                      type="button"
-                      className="flex btn btn-outline-primary my-5"
-                      style={{
-                        width: "100%",
-                        backgroundColor: "white",
-                        color: "black",
-                        fontSize: "20px",
-                      }}
-                      onClick={swapTokens}
-                    >
-                      Swap Tokens
-                    </button>
+                    {publicKey ? (
+                      <button
+                        type="button"
+                        className="flex btn btn-outline-primary my-5"
+                        style={{
+                          width: "100%",
+                          backgroundColor: "white",
+                          color: "black",
+                          fontSize: "20px",
+                        }}
+                        onClick={swapTokens}
+                      >
+                        Swap Tokens (Mutation)
+                      </button>
+                    ) : (
+                      <div style={{ width: "100%" }}>
+                        <div className="mt-3">
+                          <div className="text-center">
+                            <WalletButton />
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     <button
                       type="button"
                       className="flex btn btn-outline-primary my-5"
@@ -864,24 +907,6 @@ export default function Swaps() {
                     >
                       Use Scanner (Solana Pay)
                     </button>
-                    <Modal
-                      open={showQR}
-                      footer={null}
-                      onCancel={() => setShowQR(false)}
-                      title="Scan QR Code to Confirm Withdraw"
-                      width="90%"
-                      className="max-w-[300px]"
-                    >
-                      <div
-                        className="modalContent"
-                        style={{ textAlign: "center" }}
-                      >
-                        <div ref={qrRef} />
-                        <p>
-                          Status: <strong>{paymentStatus}</strong>
-                        </p>
-                      </div>
-                    </Modal>
                   </div>
                 )}
               </div>
@@ -894,14 +919,6 @@ export default function Swaps() {
               <span className="loading loading-spinner loading-lg"></span>
             </div>
           )}
-        </div>
-      </div>
-    </div>
-  ) : (
-    <div className="max-w-4xl mx-auto">
-      <div className="hero py-[64px]">
-        <div className="hero-content text-center">
-          <WalletButton />
         </div>
       </div>
     </div>

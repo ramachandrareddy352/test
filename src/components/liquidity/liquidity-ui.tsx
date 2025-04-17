@@ -1,25 +1,16 @@
 "use client";
 
 import React, { useState } from "react";
-import { useWallet } from "@solana/wallet-adapter-react";
-
-import { redirect } from "next/navigation";
-import { WalletButton } from "../solana/solana-provider";
 
 import { AddLiquidity } from "./add-liquidity";
 import { RemoveLiquidity } from "./remove-liquidity";
 import { FallOutlined, RiseOutlined } from "@ant-design/icons";
 // in pool as like add & remove liquidty add all listed pools and create pool
 export default function Liquidity() {
-  const { publicKey } = useWallet();
-
-  // if (publicKey) {
-  //   return redirect(`/account/${publicKey.toString()}`)
-  // }
 
   const [activeTab, setActiveTab] = useState<"add" | "remove">("add");
 
-  return publicKey ? (
+  return (
     <div className="  from-blue-50 to-indigo-50 flex items-center justify-center p-4 lg:pb-0 text-white w-[100%] md:w-[800px] mx-auto h-calc(100vh-135px) relative mb-[15px] lg:mb-0">
       <div className="w-full">
         <div className="bg-black rounded-xl shadow-lg p-1">
@@ -49,14 +40,6 @@ export default function Liquidity() {
           </div>
         </div>
         {activeTab === "add" ? <AddLiquidity /> : <RemoveLiquidity />}
-      </div>
-    </div>
-  ) : (
-    <div className="max-w-4xl mx-auto">
-      <div className="hero py-[64px]">
-        <div className="hero-content text-center">
-          <WalletButton />
-        </div>
       </div>
     </div>
   );

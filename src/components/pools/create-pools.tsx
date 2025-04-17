@@ -12,7 +12,8 @@ import {
   FindReferenceError,
   TransactionRequestURLFields,
 } from "@solana/pay";
-import { useConnection } from "@solana/wallet-adapter-react";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { WalletButton } from "../solana/solana-provider";
 
 export function CreatePools() {
   const { connection } = useConnection();
@@ -22,6 +23,7 @@ export function CreatePools() {
     fee: 30,
   });
   const { createPoolMutation } = useDexProgram();
+  const { publicKey } = useWallet();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -250,19 +252,29 @@ export function CreatePools() {
             </div>
           ) : (
             <div>
-              <button
-                type="button"
-                className="flex btn btn-outline-primary my-5"
-                style={{
-                  width: "100%",
-                  backgroundColor: "white",
-                  color: "black",
-                  fontSize: "20px",
-                }}
-                onClick={handleSubmit}
-              >
-                Create Pool
-              </button>
+              {publicKey ? (
+                <button
+                  type="button"
+                  className="flex btn btn-outline-primary my-5"
+                  style={{
+                    width: "100%",
+                    backgroundColor: "white",
+                    color: "black",
+                    fontSize: "20px",
+                  }}
+                  onClick={handleSubmit}
+                >
+                  Create Pool
+                </button>
+              ) : (
+                <div style={{ width: "100%" }}>
+                  <div className="">
+                    <div className="text-center">
+                      <WalletButton />
+                    </div>
+                  </div>
+                </div>
+              )}
               <button
                 type="button"
                 className="flex btn btn-outline-primary my-5"
