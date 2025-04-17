@@ -204,7 +204,7 @@ export function AddLiquidity() {
         );
         const tokenAccount = await connection.getTokenAccountBalance(ATAOne);
         setUserOneBalance(tokenAccount.value.uiAmount || 0);
-      } catch(error){
+      } catch (error) {
         setUserOneBalance(0);
       }
 
@@ -215,7 +215,7 @@ export function AddLiquidity() {
         );
         const tokenAccount = await connection.getTokenAccountBalance(ATATwo);
         setUserTwoBalance(tokenAccount.value.uiAmount || 0);
-      } catch(error) {
+      } catch (error) {
         setUserTwoBalance(0);
       }
     } else {
@@ -601,7 +601,7 @@ export function AddLiquidity() {
                   </button>
                 ) : (
                   <div style={{ width: "100%" }}>
-                    <div className="">
+                    <div className="mt-3">
                       <div className="text-center">
                         <WalletButton />
                       </div>

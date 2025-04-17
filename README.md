@@ -1,200 +1,310 @@
-# RCR-DEX Solana
+# SOLANA‑PAY DEX
 
-### Installation
+A decentralized exchange (DEX) built on the Solana blockchain, featuring a novel integration of Solana Pay for secure and user‑friendly token swaps and liquidity management. Developed as a minor project by students at Rajiv Gandhi University of Knowledge Technologies, this project introduces a QR code‑based transaction signing mechanism to enhance security by decoupling transaction approval from the web interface.
 
-#### Website
-
-```shell
-https://rcrdex.netlify.app/
+**Program Address:**  
+```
+FAoQiEDBmQW7aPNwcsdp988aoDNSwSbxfxSMKxaqSEhY
 ```
 
-#### Structure
-```shell
-Directory structure:
-└── ramachandrareddy352-solana-dex-full-stack/
-    ├── .github/
-    │   └── workflows/
-    │       ├── test-web.yml
-    │       └── test-anchor.yml
-    ├── next.config.mjs
-    ├── .eslintrc.json
-    ├── public/
-    │   └── token.webp
-    ├── package.json
-    ├── postcss.config.mjs
-    ├── tailwind.config.ts
-    ├── LICENSE
-    ├── tsconfig.json
-    ├── README.md
-    ├── pnpm-lock.yaml
-    ├── anchor/
-    │   ├── .prettierignore
-    │   ├── tests/
-    │   │   └── rcr_dex_test.spec.ts
-    │   ├── Cargo.toml
-    │   ├── .gitignore
-    │   ├── migrations/
-    │   │   └── deploy.ts
-    │   ├── Anchor.toml
-    │   ├── programs/
-    │   │   └── rcr_dex/
-    │   │       ├── Xargo.toml
-    │   │       ├── Cargo.toml
-    │   │       └── src/
-    │   │           ├── state.rs
-    │   │           ├── errors.rs
-    │   │           ├── lib.rs
-    │   │           ├── constants.rs
-    │   │           ├── utils.rs
-    │   │           └── instructions/
-    │   │               ├── swap_exact_input.rs
-    │   │               ├── create_amm.rs
-    │   │               ├── create_pool.rs
-    │   │               ├── withdraw_liquidity.rs
-    │   │               ├── change_amm_admin.rs
-    │   │               ├── deposit_liquidity.rs
-    │   │               ├── mod.rs
-    │   │               └── swap_exact_output.rs
-    │   ├── tsconfig.json
-    │   ├── target/
-    │   │   ├── idl/
-    │   │   │   └── rcr_dex.json
-    │   │   └── types/
-    │   │       └── rcr_dex.ts
-    │   ├── Cargo.lock
-    │   └── src/
-    │       ├── dex-exports.ts
-    │       └── index.ts
-    └── src/
-        ├── components/
-        │   ├── swap/
-        │   │   ├── swap-mutation.tsx
-        │   │   └── swap-ui.tsx
-        │   ├── solana/
-        │   │   └── solana-provider.tsx
-        │   ├── ui/
-        │   │   └── ui-layout.tsx
-        │   ├── pools/
-        │   │   ├── pool-ui.tsx
-        │   │   ├── create-pools.tsx
-        │   │   ├── pool-mutation.tsx
-        │   │   └── view-pools.tsx
-        │   ├── cluster/
-        │   │   ├── cluster-data-access.tsx
-        │   │   └── cluster-ui.tsx
-        │   ├── liquidity/
-        │   │   ├── liquidity-ui.tsx
-        │   │   ├── data-mutaion.tsx
-        │   │   ├── remove-liquidity.tsx
-        │   │   └── add-liquidity.tsx
-        │   ├── data-access/
-        │   │   ├── account-ui.tsx
-        │   │   └── account-data-access.tsx
-        │   └── home/
-        │       ├── home-page-ui.tsx
-        │       └── home-css.css
-        └── app/
-            ├── api/
-            │   └── hello/
-            │       └── route.ts
-            ├── page.tsx
-            ├── globals.css
-            ├── swap/
-            │   └── page.tsx
-            ├── pools/
-            │   └── page.tsx
-            ├── liquidity/
-            │   └── page.tsx
-            ├── layout.tsx
-            └── react-query-provider.tsx
+---
+
+## Table of Contents
+
+1. [Overview](#overview)  
+2. [Key Features](#key-features)  
+3. [Example Calculations](#example-calculations)  
+   - [Swap Exact Input](#swap-exact-input)  
+   - [Swap Exact Output](#swap-exact-output)  
+   - [Deposit Liquidity](#deposit-liquidity)  
+   - [Withdraw Liquidity](#withdraw-liquidity)  
+4. [Prerequisites](#prerequisites)  
+5. [Getting Started](#getting-started)  
+   1. [Clone the Repository](#clone-the-repository)  
+   2. [Set Up the Frontend](#set-up-the-frontend)  
+   3. [Set Up the Anchor Project](#set-up-the-anchor-project)  
+   4. [Configure Solana CLI](#configure-solana-cli)  
+   5. [Deploy the Smart Contract](#deploy-the-smart-contract)  
+   6. [Run Tests](#run-tests)  
+6. [Project Structure](#project-structure)  
+7. [Usage](#usage)  
+8. [Contributing](#contributing)  
+9. [License](#license)  
+10. [References](#references)  
+11. [Acknowledgments](#acknowledgments)  
+
+---
+
+## Overview
+
+SOLANA‑PAY DEX is an Automated Market Maker (AMM) that supports:
+
+- Token swaps (exact input and output)  
+- Liquidity provision and withdrawal  
+
+Built with Rust and the Anchor framework, it uses QR codes for transaction signing via Solana Pay–compatible wallets (e.g., Phantom, Solflare). This minimizes trust in the frontend and mitigates phishing or malicious signing risks.
+
+---
+
+## Key Features
+
+- **Solana Pay Integration**  
+  Secure approval of swaps and liquidity operations via QR code scanning on a trusted mobile wallet.
+
+- **Constant Product AMM**  
+  Uniswap V2‑style constant product market maker logic with configurable fees (default 0.3%).
+
+- **Core Functionalities**  
+  - Swap Exact Input  
+  - Swap Exact Output  
+  - Deposit Liquidity  
+  - Withdraw Liquidity
+
+- **Frontend**  
+  Built with Next.js, React, TypeScript, Tailwind CSS. Supports both Solana Pay and traditional wallet connections via `@solana/wallet-adapter`.
+
+- **Security**  
+  Transaction signing occurs in the user’s mobile wallet, reducing frontend trust.
+
+- **Deployment**  
+  - Smart contract on Solana  
+  - Frontend hosted on Vercel
+
+---
+
+## Example Calculations
+
+Based on the constant product formula:  
+\[
+k = x \times y
+\]
+
+### Swap Exact Input
+
+Swap a fixed amount of Token A (Δxₙ) for Token B.
+
+\[
+\Delta y_{\text{out}} = \frac{y \times \Delta x_{\text{in}} \times (1 - \text{fee})}{x + \Delta x_{\text{in}} \times (1 - \text{fee})}
+\]
+
+**Example**  
+- Pool: x = 1000 SOL, y = 200,000 USDC  
+- Input: Δxₙ = 10 SOL  
+- Fee: 0.3% (0.003)  
+- Effective Input: 9.97 SOL  
+
+\[
+\Delta y_{\text{out}} = \frac{200,000 \times 9.97}{1000 + 9.97} \approx 1,974.316 \text{ USDC}
+\]
+
+New pool: x′ = 1009.97 SOL, y′ = 198,025.684 USDC
+
+---
+
+### Swap Exact Output
+
+Receive a fixed amount of Token B (Δyₙ) by spending Token A.
+
+\[
+\Delta x_{\text{in}} = \frac{x \times \Delta y_{\text{out}}}{(y - \Delta y_{\text{out}}) \times (1 - \text{fee})}
+\]
+
+**Example**  
+- Desired Output: Δyₙ = 2000 USDC  
+
+\[
+\Delta x_{\text{in}} = \frac{1000 \times 2000}{(200,000 - 2000) \times 0.997} \approx 10.131 \text{ SOL}
+\]
+
+Effective Input: 10.1006 SOL  
+New pool: x′ = 1010.1006 SOL, y′ = 198,000 USDC
+
+---
+
+### Deposit Liquidity
+
+Add tokens proportionally and receive LP tokens.
+
+\[
+\Delta l = l \times \frac{\Delta x}{x}, \quad \Delta y = \frac{y \times \Delta x}{x}
+\]
+
+**Example**  
+- Pool: x = 1000 SOL, y = 200,000 USDC, l = 10,000 LP  
+- Deposit: Δx = 50 SOL  
+
+\[
+\Delta y = \frac{200,000 \times 50}{1000} = 10,000 \text{ USDC}
+\]  
+\[
+\Delta l = 10,000 \times \frac{50}{1000} = 500 \text{ LP}
+\]
+
+New pool: x′ = 1050 SOL, y′ = 210,000 USDC, l′ = 10,500 LP
+
+---
+
+### Withdraw Liquidity
+
+Burn LP tokens to retrieve proportional reserves.
+
+\[
+\Delta x = x \times \frac{\Delta l}{l}, \quad \Delta y = y \times \frac{\Delta l}{l}
+\]
+
+**Example**  
+- Burn: Δl = 500 LP  
+
+\[
+\Delta x = 1050 \times \frac{500}{10,500} = 50 \text{ SOL}
+\]  
+\[
+\Delta y = 210,000 \times \frac{500}{10,500} = 10,000 \text{ USDC}
+\]
+
+New pool: x′ = 1000 SOL, y′ = 200,000 USDC, l′ = 10,000 LP
+
+---
+
+## Prerequisites
+
+- **Node.js** v16+ & PNPM (`npm install -g pnpm`)  
+- **Rust & Cargo** (`curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`)  
+- **Solana CLI**  
+  ```bash
+  sh -c "https://release.solana.com/stable/install"
+  ```  
+- **Anchor CLI**  
+  ```bash
+  cargo install --git https://github.com/coral-xyz/anchor avm --locked --force
+  ```  
+- **Git**  
+- A Solana wallet keypair (e.g., `solana-keygen new`)  
+- Access to a Solana RPC node (Devnet/Testnet/Mainnet)
+
+---
+
+## Getting Started
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/your-username/solana-pay-dex.git
+cd solana-pay-dex
 ```
 
-#### Clone the repo
-
-```shell
-git clone https://github.com/ramachandrareddy352/solana-dex-full-stack
-cd solana-dex-full-stack
-```
-
-#### Install Dependencies
-
-```shell
+### 2. Set Up the Frontend
+```bash
 pnpm install
+touch .env.local
 ```
 
-#### Start the web app
+**.env.local**  
+```
+NEXT_PUBLIC_SOLANA_RPC_URL=https://api.devnet.solana.com
+NEXT_PUBLIC_PROGRAM_ID=FAoQiEDBmQW7aPNwcsdp988aoDNSwSbxfxSMKxaqSEhY
+```
 
-```shell
+```bash
 pnpm dev
 ```
 
-#### Build the web app
+---
 
-```shell
-pnpm build
+### 3. Set Up the Anchor Project
+```bash
+cd anchor
+pnpm install
+anchor build
 ```
-### App 
-```shell
-1) View Pools
--> You can see the current trading pools on the protocol with the Mint-A & Mint-B token address, fees, liquidity in the pool and Mint-A & Mint-B total amount deposited in the pool.
 
-2) Create Pools
--> Any trader can create pool with two unique tokens.
+---
 
--> Mint-A address should be greater than the Mint-B address.
-
--> To create a pool user have to pay 0.1 SOL to the pool admin. There is no need to add initial liquidity to the pool while creating.
-
--> Trading on exchange is works on single hop swap exchange, tarders cannot swap, add or remove liquidity when the pool is not exists.
-
--> User have to select any one of the fee tier to create pool with two uniqe tokens. With any two tokens any one can create only single pool even though having mutiple fee tiers.
-
--> Trading pool is works on principle of Automated Market Maker(AMM), x * y = k
-
-3) Add Liquidity
--> At initial liquidity the pool takes 100 liquidity tokens to avoid inflation attacks.
-
--> Traders have to select fees correctly, if the fees withe the selected tokens are not exists the adding of liquidity will fails.
-
--> Liquidity providers can add liquidity even in an unequal ratio compared to the existing pools token balances. The protocol automatically swaps the excess tokens on a DEX (like Raydium) to balance the ratio and adds the full amount to the pool.
-
--> Example
-
-A liquidity pool contains: Token-A: 100 units Token-B: 200 units The pool follows a constant ratio (1:2 ratio) between Token-A and Token-B.
-
-A liquidity provider (LP) wants to add liquidity but provides tokens in a different ratio: Token-A: 50 units Token-B: 300 units(1:6 ratio).
-
-The protocol uses Raydium DEX to swap the excess Token-B into Token-A.
-
-At initial we take Token-A: 50 units and Token-B: 100 units with respective to pool balance ratios.
-
-With the excess Token-B amount of 200 units we divide with 3 units(1+2), with that we swap Token-A with the 1 ratio amount of exceed 200 Units.
-
-i.e, 66.6 Token-B units are swapped to Token-A in Raydium DEX by calculating fees.
-
-After swapping the total Amount-A: 116.6 and Amount-B: 233.4(1:2 ration) tokens of liquidity is added
-
-->This feature makes easy to add any ratio amount of liquidity to the pool.
-
-4) Remove Liquidity
--> Trader will get all the swap fees of the pool. Adding and Removing liquidity works based on the minting and burning of shares.(ERC-4626 vault)
-
--> Trader have to select correct fees and tokens to withdraw liquidity.
-
--> There is no liquidity fees is collected during adding and removing of liquidity tokens.
-
-5) Swap Tokens(Exact Input & Exact Output)
--> User have to select the correct tokens and fee tier, only the pool which exists with that fees and tokens only swap will executes.
-
--> User can select the price slippage tolerance to swap the tokens within the selected price ranges, It is set by users to prevent trades from completing if market conditions or liquidity cause prices to deviate beyond this threshold.
-
--> User can swap tokens with exact input amount or exact output amount by jsut changing the input values.
-
--> Users can see the output amount they can get based on the current liquidity in the pool.
-
--> User have to enter the amount with the entier decimal of the token.
-
--> Example : If the Token-A decimal is 9, then usser want to swap 5 Token-A amount, then user want to enter 5_000_000_000 in input field, and out amount also displayed with the decimal values.
-
--> Swapping prices are calculated by charging fees of that respective pool with securely which makes avoild the rounding issues while calculating.
+### 4. Configure Solana CLI
+```bash
+solana config set --url https://api.devnet.solana.com
+solana airdrop 2
+solana config set --keypair ~/.config/solana/id.json
 ```
+
+---
+
+### 5. Deploy the Smart Contract
+```bash
+anchor deploy
+```
+> After deployment, update `NEXT_PUBLIC_PROGRAM_ID` in `.env.local`
+
+---
+
+### 6. Run Tests
+```bash
+anchor test
+```
+
+---
+
+## Project Structure
+
+```
+solana-pay-dex/
+├── anchor/
+│   ├── programs/
+│   │   └── rcr-dex/
+│   ├── tests/
+│   └── Anchor.toml
+├── src/
+│   ├── app/
+│   └── components/
+├── public/
+├── tailwind.config.ts
+├── pnpm-lock.yaml
+├── vercel.json
+└── README.md
+```
+
+---
+
+## Usage
+
+1. Access the frontend (`localhost:3000` or deployed URL).  
+2. Connect via wallet adapter or Solana Pay.  
+3. Perform swaps, deposits, and withdrawals via QR codes or UI.  
+4. View pool reserves in the “View Pools” section.
+
+---
+
+## Contributing
+
+1. Fork the repo.  
+2. Create a feature branch:  
+   ```bash
+   git checkout -b feature/your-feature
+   ```  
+3. Commit your changes:  
+   ```bash
+   git commit -m "Add awesome feature"
+   ```  
+4. Push and open a Pull Request.
+
+Ensure tests pass and follow the existing coding style.
+
+---
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
+---
+
+## References
+
+- [Solana Documentation](https://docs.solana.com/)  
+- [Anchor Framework](https://www.anchor-lang.com/)  
+- [Solana Pay Documentation](https://solanapay.com/)  
+- [Uniswap V2 Whitepaper](https://uniswap.org/whitepaper.pdf)
+
+---
+
+## Acknowledgments
+
+Developed by T. RamaChandra Reddy, P. Prasad, B. Nagendra Reddy, H. Maneesh, and K. Mukunda under the guidance of Mr. Sravan Kumar at Rajiv Gandhi University of Knowledge Technologies, Nuzvid Campus.
